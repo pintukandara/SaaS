@@ -33,7 +33,8 @@ INSTALLED_APPS = [
     'notifications',
     'projects',
     'teams',
-    'django_filters'
+    'django_filters',
+    'django_extensions'
 ]
 
 MIDDLEWARE = [
@@ -71,9 +72,9 @@ WSGI_APPLICATION = 'employee_tasks_saas.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'saasdb',
-        'USER': 'root',
-        'PASSWORD': 'Strongest@1204',
+        'NAME': 'saas_db',
+        'USER': 'saas_user',
+        'PASSWORD': 'Strongest@',
         'HOST': 'localhost',
         'PORT': '3306',
     }

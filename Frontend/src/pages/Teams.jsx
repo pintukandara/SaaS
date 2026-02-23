@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
+import { DashboardNav } from '../components/Dashboard/DashboardNav';
 
 function Teams() {
     const [departments, setDepartments] = useState([]);
@@ -51,7 +52,9 @@ function Teams() {
     }
 
     return (
+
         <div className="min-h-screen bg-gray-50">
+            <DashboardNav/>
             {/* Header */}
             <div className="bg-white shadow-sm border-b">
                 <div className="max-w-7xl mx-auto px-4 py-6">

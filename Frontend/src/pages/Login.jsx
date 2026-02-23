@@ -1,12 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
+import Navbar from '../components/LandingPage/Navbar';
 
 function Login() {
     const [formData, setFormData] = useState({
         username: '',
         password: '',
     });
+    const [user,setUser] = useState(null);
+
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -18,6 +21,9 @@ function Login() {
         });
     };
 
+
+
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -27,6 +33,7 @@ function Login() {
             const response = await api.post('/auth/login/', formData);
             localStorage.setItem('access_token', response.data.access);
             localStorage.setItem('refresh_token', response.data.refresh);
+            // console.log(response.data);
             navigate('/dashboard');
         } catch (err) {
             setError(err.response?.data?.detail || 'Invalid credentials');
@@ -35,7 +42,11 @@ function Login() {
         }
     };
 
+
     return (
+        <>
+        <Navbar/>
+        
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-4">
             {/* Background decoration */}
             <div className="absolute inset-0 bg-black opacity-20"></div>
@@ -138,6 +149,7 @@ function Login() {
                 </div>
             </div>
         </div>
+        </>
     );
 }
 

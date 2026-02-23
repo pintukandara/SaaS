@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
+import Navbar from '../components/LandingPage/Navbar';
 
 function Register() {
     const [formData, setFormData] = useState({
@@ -46,6 +47,9 @@ function Register() {
     };
 
     return (
+        <>
+        
+        <Navbar />
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-600 to-red-500 p-4">
             <div className="absolute inset-0 bg-black opacity-20"></div>
 
@@ -211,6 +215,7 @@ function Register() {
                 </div>
             </div>
         </div>
+        </>
     );
 }
 
