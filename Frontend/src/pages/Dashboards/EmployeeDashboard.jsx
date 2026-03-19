@@ -1,15 +1,12 @@
-import React, { useEffect, useState } from "react";
-import api from "../../api/axios";
-import { WelcomeDashBoard } from "../../components/Dashboard/WelcomeDashBoard";
-import { useUser } from "../../context/UseContext";
-import { StatesGrid } from "../../components/Dashboard/StatesGrid";
-import Navbar from "../../components/LandingPage/Navbar";
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../../api/axios';
+import { useUser } from '../../context/UserContext'; 
+import { DashboardNav } from '../../components/Dashboard/DashboardNav';
 
-
-
-function EmployeeDashboard() {
-  const { user } = useUser();
+export function EmployeeDashboard() {
+    const { user } = useUser(); 
+    
     const [stats, setStats] = useState({
         myTasks: 0,
         completed: 0,
@@ -26,13 +23,11 @@ function EmployeeDashboard() {
 
     const fetchEmployeeData = async () => {
         try {
-            // Fetch employee's tasks
             const tasksRes = await api.get('/tasks/my_tasks/');
             const myTasks = tasksRes.data;
 
             setTasks(myTasks);
 
-            // Calculate statistics
             setStats({
                 myTasks: myTasks.length,
                 completed: myTasks.filter(t => t.status === 'done').length,
@@ -83,8 +78,8 @@ function EmployeeDashboard() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Navbar */}
-            <Navbar  />
+            {/* ✅ Navbar gets user from context automatically */}
+            <DashboardNav/>
 
             {/* Main Content */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -93,7 +88,7 @@ function EmployeeDashboard() {
                     <div className="flex items-center justify-between">
                         <div>
                             <h2 className="text-3xl sm:text-4xl font-bold mb-2">
-                                Welcome back, {user?.first_name || user?.username}! 👋
+                                Welcome back, {user?.first_name || user?.username}!
                             </h2>
                             <p className="text-green-100 text-lg">
                                 You have {stats.todo + stats.inProgress} tasks in progress

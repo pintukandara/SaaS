@@ -10,7 +10,13 @@ export const UserProvider = ({ children }) => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        fetchUser();
+        // Only fetch user if authenticated
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            fetchUser();
+        } else {
+            setLoading(false);
+        }
     }, []);
 
     const fetchUser = async () => {
@@ -19,6 +25,9 @@ export const UserProvider = ({ children }) => {
             setUser(response.data);
         } catch (err) {
             console.error('Failed to fetch user data', err);
+            // If token is invalid, clear storage and redirect
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
             navigate('/login');
         } finally {
             setLoading(false);
@@ -29,9 +38,19 @@ export const UserProvider = ({ children }) => {
         setUser(newUserData);
     };
 
-    
+    const refreshUser = () => {
+        fetchUser();
+    };
+
+    const value = {
+        user,
+        loading,
+        updateUser,
+        refreshUser,
+    };
+
     return (
-        <UserContext.Provider value={{ user, loading, updateUser }}>
+        <UserContext.Provider value={value}>
             {children}
         </UserContext.Provider>
     );

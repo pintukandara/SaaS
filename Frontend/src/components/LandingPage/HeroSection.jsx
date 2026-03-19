@@ -36,7 +36,9 @@ export const HeroSection = () => {
                         <div className="mt-16">
                             <div className="bg-white rounded-2xl shadow-2xl p-4 max-w-5xl mx-auto">
                                 <div className="bg-gray-100 rounded-lg h-96 flex items-center justify-center">
-                                    <p className="text-gray-500 text-lg">Dashboard Screenshot Here</p>
+                                    <p className="text-gray-500 text-lg">
+                                        <img src = "https://i.pinimg.com/736x/08/b5/1c/08b51c200807355b2c8bfc92d5c81a95.jpg" alt = "Dashboard Screenshot" className="w-full h-full object-cover rounded-lg" />
+                                    </p>
                                 </div>
                             </div>
                         </div>

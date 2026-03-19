@@ -10,7 +10,7 @@ export const CtaSection = () => {
                         Ready to Get Started?
                     </h2>
                     <p className="text-xl text-indigo-100 mb-8">
-                        Join thousands of teams already using TaskFlow
+                        Join thousands of teams already using Prodly
                     </p>
                     <Link
                         to="/register"

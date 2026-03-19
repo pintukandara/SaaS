@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
-import Navbar from '../components/LandingPage/Navbar';
 
 function Register() {
     const [formData, setFormData] = useState({
@@ -13,6 +12,8 @@ function Register() {
         last_name: '',
         role: 'employee',
     });
+    const [avatar, setAvatar] = useState(null); // ✅ Separate state for avatar file
+    const [avatarPreview, setAvatarPreview] = useState(null); // ✅ Preview image
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -24,32 +25,121 @@ function Register() {
         });
     };
 
+    // ✅ Handle file input separately
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                setError('Image size should be less than 5MB');
+                return;
+            }
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                setError('Please upload an image file');
+                return;
+            }
+
+            setAvatar(file);
+            
+            // Create preview
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setAvatarPreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+            
+            // Clear any previous error
+            setError('');
+        }
+    };
+
+    // ✅ Remove selected image
+    const removeAvatar = () => {
+        setAvatar(null);
+        setAvatarPreview(null);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
+        // Validate passwords match
         if (formData.password !== formData.password2) {
             setError("Passwords don't match");
+            return;
+        }
+
+        // Validate password strength (optional)
+        if (formData.password.length < 6) {
+            setError("Password must be at least 6 characters long");
             return;
         }
 
         setLoading(true);
 
         try {
-            await api.post('/auth/register/', formData);
+            // ✅ Create FormData for file upload
+            const submitData = new FormData();
+            submitData.append('username', formData.username);
+            submitData.append('email', formData.email);
+            submitData.append('password', formData.password);
+            submitData.append('password2', formData.password2);
+            submitData.append('first_name', formData.first_name);
+            submitData.append('last_name', formData.last_name);
+            submitData.append('role', formData.role);
+            
+            // ✅ Add avatar if selected
+            if (avatar) {
+                submitData.append('avatar', avatar);
+            }
+
+            // ✅ Send with multipart/form-data headers
+            await api.post('/auth/register/', submitData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            
             alert('Registration successful! Please login.');
             navigate('/login');
         } catch (err) {
-            setError(err.response?.data?.username?.[0] || 'Registration failed');
+            console.error('Registration error:', err);
+            
+            // Better error handling
+            let errorMessage = 'Registration failed';
+            
+            if (err.response?.data) {
+                const errorData = err.response.data;
+                
+                // Handle different error formats
+                if (typeof errorData === 'string') {
+                    errorMessage = errorData;
+                } else if (errorData.username) {
+                    errorMessage = Array.isArray(errorData.username) 
+                        ? errorData.username[0] 
+                        : errorData.username;
+                } else if (errorData.email) {
+                    errorMessage = Array.isArray(errorData.email) 
+                        ? errorData.email[0] 
+                        : errorData.email;
+                } else if (errorData.password) {
+                    errorMessage = Array.isArray(errorData.password) 
+                        ? errorData.password[0] 
+                        : errorData.password;
+                } else if (errorData.detail) {
+                    errorMessage = errorData.detail;
+                }
+            }
+            
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <>
-        
-        <Navbar />
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-pink-600 to-red-500 p-4">
             <div className="absolute inset-0 bg-black opacity-20"></div>
 
@@ -77,10 +167,55 @@ function Register() {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    {/* ✅ Avatar Upload Section */}
+                    <div className="flex flex-col items-center mb-4">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Profile Picture (Optional)
+                        </label>
+                        
+                        {avatarPreview ? (
+                            <div className="relative">
+                                <img 
+                                    src={avatarPreview} 
+                                    alt="Avatar preview" 
+                                    className="w-24 h-24 rounded-full object-cover border-4 border-purple-500 shadow-lg"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={removeAvatar}
+                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="w-24 h-24 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-3xl font-bold mb-2">
+                                {formData.first_name?.[0] || formData.username?.[0] || '?'}
+                            </div>
+                        )}
+                        
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            className="hidden"
+                            id="avatar-upload"
+                        />
+                        <label
+                            htmlFor="avatar-upload"
+                            className="mt-3 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition cursor-pointer text-sm font-medium"
+                        >
+                            {avatar ? 'Change Photo' : 'Upload Photo'}
+                        </label>
+                        <p className="text-xs text-gray-500 mt-1">Max 5MB (JPG, PNG, GIF)</p>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Username
+                                Username <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
@@ -95,7 +230,7 @@ function Register() {
 
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Email
+                                Email <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="email"
@@ -157,7 +292,7 @@ function Register() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Password
+                                Password <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="password"
@@ -167,12 +302,14 @@ function Register() {
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                                 placeholder="Create password"
                                 required
+                                minLength={6}
                             />
+                            <p className="text-xs text-gray-500 mt-1">At least 6 characters</p>
                         </div>
 
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Confirm Password
+                                Confirm Password <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="password"
@@ -215,7 +352,6 @@ function Register() {
                 </div>
             </div>
         </div>
-        </>
     );
 }
 

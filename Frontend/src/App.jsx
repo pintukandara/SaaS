@@ -1,17 +1,22 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { UserProvider } from "./context/UserContext";
+import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import { UserProvider } from './context/UseContext';
+import Dashboard from "./pages/Dashboard";
 import Teams from "./pages/Teams";
+import Profile from "./pages/Profile";
+import CreateTask from "./pages/tasks/CreateTask";
+import TasksList from "./pages/tasks/TasksList";
+import TaskDetail from "./pages/tasks/TaskDetail";
 import { isAuthenticated } from "./utils/auth";
-import LandingPage from "./pages/LandingPage.jsx";
-import { EmployeeDashboard } from "./pages/Dashboards/EmployeeDashboard.jsx";
-import { ManagerDashboard } from "./pages/Dashboards/ManagerDashboard.jsx";
-import Dashboard from "./pages/Dashboards.jsx";
+import DepartmentsList from "./pages/departments/DepartmentsList";
+import ProjectsList from "./pages/projects/ProjectsList";
 
 function ProtectedRoute({ children }) {
-  return isAuthenticated() ? children : <LandingPage />;
+  return isAuthenticated() ? children : <Navigate to="/login" />;
 }
+
 function PublicRoute({ children }) {
   return !isAuthenticated() ? children : <Navigate to="/dashboard" />;
 }
@@ -21,9 +26,33 @@ function App() {
     <BrowserRouter>
       <UserProvider>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          {/* Public Routes */}
+          <Route
+            path="/"
+            element={
+              <PublicRoute>
+                <LandingPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <PublicRoute>
+                <Register />
+              </PublicRoute>
+            }
+          />
+
+          {/* Protected Routes */}
           <Route
             path="/dashboard"
             element={
@@ -41,21 +70,66 @@ function App() {
             }
           />
           <Route
-            path="/employeedashboard"
+            path="/profile"
             element={
               <ProtectedRoute>
-                <EmployeeDashboard />
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ✅ Task Routes */}
+          <Route
+            path="/tasks"
+            element={
+              <ProtectedRoute>
+                <TasksList />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/managerdashboard"
+            path="/tasks/create"
             element={
               <ProtectedRoute>
-                <ManagerDashboard />
+                <CreateTask />
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/tasks/create"
+            element={
+              <ProtectedRoute>
+                <CreateTask />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tasks/:id"
+            element={
+              <ProtectedRoute>
+                <TaskDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/departments"
+            element={
+              <ProtectedRoute>
+                <DepartmentsList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects"
+            element={
+              <ProtectedRoute>
+                <ProjectsList />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Catch all */}
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </UserProvider>
     </BrowserRouter>
