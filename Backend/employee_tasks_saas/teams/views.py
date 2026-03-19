@@ -3,6 +3,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from .permissions import IsAdminOrManagerCreateTeams
 from .models import Department, Team, TeamMember
 from .serializers import (
     DepartmentSerializer, 
@@ -85,3 +86,4 @@ class TeamViewSet(viewsets.ModelViewSet):
         user_teams = Team.objects.filter(members__user=request.user)
         serializer = self.get_serializer(user_teams, many=True)
         return Response(serializer.data)
+

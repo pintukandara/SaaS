@@ -5,6 +5,8 @@ from users.serializers import UserSerializer
 
 class ProjectMemberSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
+    user_id = serializers.IntegerField(write_only = True,required = False)
+
 
     class Meta:
         model = ProjectMember
@@ -34,6 +36,15 @@ class ProjectSerializer(serializers.ModelSerializer):
 
     def get_member_count(self, obj):
         return obj.members.count()
+    
+    def get_team(self, obj):
+        if obj.team:
+            return {
+                'id': obj.team.id,
+                'name': obj.team.name,
+                'department_name': obj.team.department.name if obj.team.department else None
+            }
+        return None
 
 
 class ProjectDetailSerializer(serializers.ModelSerializer):

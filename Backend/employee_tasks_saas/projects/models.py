@@ -20,9 +20,11 @@ class Project(models.Model):
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
+        default = 2,
         related_name='owned_projects',
-        default = 2
+        help_text="Manager responsible for this project",
     )
+
     team = models.ForeignKey(
         'teams.Team',
         on_delete=models.SET_NULL,
@@ -35,8 +37,8 @@ class Project(models.Model):
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True,null=True)
-
     updated_at = models.DateTimeField(auto_now=True)
+    
 
     class Meta:
         ordering = ['-created_at']

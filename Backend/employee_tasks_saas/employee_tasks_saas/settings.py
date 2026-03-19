@@ -75,8 +75,8 @@ DATABASES = {
         'NAME': 'saas_db',
         'USER': 'saas_user',
         'PASSWORD': 'Strongest@',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'HOST': '127.0.0.1',
+        'PORT': '3307',
     }
 }
 
