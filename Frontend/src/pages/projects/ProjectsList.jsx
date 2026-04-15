@@ -50,7 +50,8 @@ function ProjectsList() {
     const fetchProjects = async () => {
         try {
             const response = await api.get('/projects/');
-            setProjects(response.data);
+            setProjects(response.data.results);
+            console.log('Fetched projects:', response.data);
         } catch (error) {
             console.error('Failed to fetch projects:', error);
         }
@@ -68,7 +69,8 @@ function ProjectsList() {
     const fetchManagers = async () => {
         try {
             const response = await api.get('/auth/users/');
-            const managerUsers = response.data.filter(u => 
+            console.log('Fetched users for managers:', response.data);
+            const managerUsers = response.data.results.filter(u => 
                 u.role === 'manager' || u.role === 'admin'
             );
             setManagers(managerUsers);
@@ -192,6 +194,7 @@ function ProjectsList() {
     }
 
     return (
+    
         <div className="min-h-screen bg-gray-50">
             <DashboardNav />
 

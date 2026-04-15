@@ -56,7 +56,8 @@ function Teams() {
     const fetchTeams = async () => {
         try {
             const response = await api.get('/teams/');
-            setTeams(response.data);
+            setTeams(response.data.results);
+            console.log('Fetched teams:', response.data);
         } catch (error) {
             console.error('Failed to fetch teams:', error);
         }
@@ -65,7 +66,8 @@ function Teams() {
     const fetchDepartments = async () => {
         try {
             const response = await api.get('/departments/');
-            setDepartments(response.data);
+            console.log('Fetched departments:', response.data);
+            setDepartments(response.data.results);
         } catch (error) {
             console.error('Failed to fetch departments:', error);
         }
@@ -74,8 +76,9 @@ function Teams() {
     const fetchManagers = async () => {
         try {
             const response = await api.get('/auth/users/');
+            console.log('Fetched users for managers:', response.data);
             // Filter only managers and admins
-            const managerUsers = response.data.filter(u => 
+            const managerUsers = response.data.results.filter(u => 
                 u.role === 'manager' || u.role === 'admin'
             );
             setManagers(managerUsers);

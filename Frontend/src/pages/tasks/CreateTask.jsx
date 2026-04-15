@@ -55,8 +55,9 @@ function CreateTask() {
     const fetchProjects = async () => {
         try {
             const response = await api.get('/projects/');
-            setProjects(response.data);
-            console.log('✅ Projects loaded:', response.data.length);
+            console.log(response.data);
+            setProjects(response.data.results);
+            console.log('✅ Projects loaded:', response.data.results.length);
         } catch (error) {
             console.error('Failed to fetch projects:', error);
         }
@@ -67,8 +68,9 @@ function CreateTask() {
             if (user?.role === 'admin') {
                 // ✅ Admin: Fetch all users
                 const response = await api.get('/auth/users/');
-                setEmployees(response.data);
-                console.log('✅ All employees loaded:', response.data.length);
+                console.log(response.data.results);
+                setEmployees(response.data.results);
+                console.log('✅ All employees loaded:', response.data.results.length);
                 
             } else if (user?.role === 'manager') {
                 // ✅ Manager: Fetch team members from my teams

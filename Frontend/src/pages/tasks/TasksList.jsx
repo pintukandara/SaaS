@@ -27,8 +27,9 @@ function TasksList() {
     const fetchTasks = async () => {
         try {
             const response = await api.get('/tasks/');
-            setTasks(response.data);
-            setFilteredTasks(response.data);
+            setTasks(response.data.results);
+            setFilteredTasks(response.data.results);
+            console.log('Fetched tasks:', response.data);
         } catch (error) {
             console.error('Failed to fetch tasks:', error);
         } finally {
@@ -52,6 +53,7 @@ function TasksList() {
         // Filter by search
         if (filters.search) {
             const searchLower = filters.search.toLowerCase();
+            console.log('Applying search filter with:', searchLower);
             filtered = filtered.filter(task =>
                 task.title.toLowerCase().includes(searchLower) ||
                 (task.description && task.description.toLowerCase().includes(searchLower))

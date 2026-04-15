@@ -43,20 +43,29 @@ export function AdminDashboard() {
             ]);
 
             const allDepartments = departmentsRes.data;
+            console.log("Fetched departments:", allDepartments.results); // Log top 4 departments
             const allTeams = teamsRes.data;
+            console.log("Fetched teams:", allTeams);
             const allTasks = tasksRes.data;
+            console.log("Fetched tasks:", allTasks);
             const allProjects = projectsRes.data;
+            console.log("Fetched projects:", allProjects);
 
-            setDepartments(allDepartments.slice(0, 4)); // Show top 4 departments
-            setTopTeams(allTeams.slice(0, 5)); // Show top 5 teams
+            setDepartments(allDepartments.results.slice(0, 4));
+             // Show top 4 departments
+            setTopTeams(allTeams.results.slice(0, 5)); // Show top 5 teams
 
             // Calculate total employees (you might need to create this endpoint)
-            const totalEmployees = allTeams.reduce((acc, team) => acc + (team.member_count || 0), 0);
+            const totalEmployees = allTeams.results.reduce((acc, team) => acc + (team.member_count || 0), 0);
+            console.log("Calculated total employees:", totalEmployees);
 
             // Calculate task statistics
-            const activeTasks = allTasks.filter(t => t.status !== 'done').length;
-            const completedTasks = allTasks.filter(t => t.status === 'done').length;
-            const overdueTasks = allTasks.filter(t => t.is_overdue).length;
+            const activeTasks = allTasks.results.filter(task => task.status !== 'done').length;
+            console.log("Calculated active tasks:", activeTasks);
+            const completedTasks = allTasks.results.filter(t => t.status === 'done').length;
+
+
+            const overdueTasks = allTasks.results.filter(t => t.is_overdue).length;
 
             setStats({
                 totalEmployees: totalEmployees,
@@ -70,7 +79,7 @@ export function AdminDashboard() {
             });
 
             // Create recent activity from recent tasks
-            setRecentActivity(allTasks.slice(0, 5));
+            setRecentActivity(allTasks.results.slice(0, 5));
 
         } catch (error) {
             console.error('Failed to fetch admin data:', error);

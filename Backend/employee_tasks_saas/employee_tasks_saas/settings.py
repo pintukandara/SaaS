@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'notifications',
     'projects',
     'teams',
+    'subscription'
 ]
 
 MIDDLEWARE = [
@@ -49,6 +50,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'subscription.middleware.OrganisationMiddleware', 
 ]
 
 ROOT_URLCONF = 'employee_tasks_saas.urls'

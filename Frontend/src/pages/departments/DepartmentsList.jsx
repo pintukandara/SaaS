@@ -27,7 +27,8 @@ function DepartmentsList() {
         setLoading(true);
         try {
             const response = await api.get('/departments/');
-            setDepartments(response.data);
+            console.log('Fetched departments:', response.data);
+            setDepartments(response.data.results);
         } catch (error) {
             console.error('Failed to fetch departments:', error);
             setError('Failed to load departments');
