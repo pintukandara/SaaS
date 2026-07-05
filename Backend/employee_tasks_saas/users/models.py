@@ -28,8 +28,9 @@ class CustomUser(AbstractUser):
                                              )
     
     @property
-    def avatar(self):
+    def avatar_url(self):
         if self.avatar:
+            print(self.avatar.url)
             return self.avatar.url
         return None
     def get_organisation(self):

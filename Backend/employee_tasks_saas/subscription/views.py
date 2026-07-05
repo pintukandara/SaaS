@@ -55,7 +55,7 @@ class OrganisationViewSet(viewsets.ModelViewSet):
 
         # Create a free Trial Subscription for new organisation
 
-        free_trial = Subscription.objects.filter(name = 'free').first()
+        free_trial = SubscriptionPlan.objects.filter(name = 'free').first()
         if free_trial:
             Subscription.objects.create(
                 organisation = org,

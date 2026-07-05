@@ -15,4 +15,5 @@ class Migration(migrations.Migration):
             old_name='organization',
             new_name='organisation',
         ),
+     
     ]

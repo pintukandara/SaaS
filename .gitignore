@@ -36,3 +36,20 @@ Thumbs.db
 # Logs
 logs/
 *.log
+# Python
+__pycache__/
+*.pyc
+myenv/
+venv/
+.env
+
+# Node
+node_modules/
+
+# Django
+media/
+staticfiles/
+
+# OS
+.DS_Store
+Thumbs.db

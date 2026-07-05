@@ -51,7 +51,7 @@ class Organisation(models.Model):
     slug = models.SlugField(unique= True)
     description = models.TextField(blank=True, null=True)
 
-    # Owner (admin who created the organization)
+    # Owner (admin who created the organisation)
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
