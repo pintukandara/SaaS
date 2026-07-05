@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: mysql_saas_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: Strongest@
+      MYSQL_DATABASE: saas_db
+      MYSQL_USER: saas_user
+      MYSQL_PASSWORD: Strongest@
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - saas_network
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: django_saas_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the code for live-reload development
+      - ./Backend/employee_tasks_saas:/app
+    environment:
+      # Override database settings to point to the db container inside the Docker network
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_NAME=saas_db
+      - DB_USER=saas_user
+      - DB_PASSWORD=Strongest@
+      - SECRET_KEY=django-insecure-qkz#_e65(it^a%w&d&806hx_2^t$$urld^9%b!7ezv_@4sdnaf
+      - DEBUG=True
+    depends_on:
+      - db
+    networks:
+      - saas_network
+
+volumes:
+  mysql_data:
+
+networks:
+  saas_network:
+    driver: bridge

@@ -1,4 +1,3 @@
-from turtle import mode
 from users.models import CustomUser
 from django.db import models
 
