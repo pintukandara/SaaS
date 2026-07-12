@@ -3,8 +3,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import viewsets
+
+from Backend.employee_tasks_saas.subscription.models import Invitation
 from .models import CustomUser
-from .serializers import RegisterSerializer, UserSerializer, UserListSerializer
+from .serializers import RegisterSerializer, UserSerializer, UserListSerializer, AcceptInvitationSerializer 
 
 
 class RegisterView(generics.CreateAPIView):
@@ -19,7 +21,7 @@ class RegisterView(generics.CreateAPIView):
         user = serializer.save()
         return Response({
             "user": UserSerializer(user, context={'request': request}).data,
-            "message": "User created successfully"
+            "message": "User created successfully and Organisation created successfully."
         }, status=status.HTTP_201_CREATED)
 
 
@@ -75,3 +77,45 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         else:
             # Employees cannot list users
             return CustomUser.objects.none()
+
+
+class AcceptInvitationView(generics.CreateAPIView):
+    # accept an invitation role and organisation will be set in the view based on the invitation
+
+    queryset = CustomUser.objects.all()
+    serializer_class = AcceptInvitationSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+    def create(self,request, *args, **kwargs):
+        serializer = self.get_serializer(data = request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        return Response({
+            "user": UserSerializer(user, context={'request': request}).data,
+            "message": "User created successfully and invitation accepted."
+        }, status=status.HTTP_201_CREATED)
+
+
+class VerifyInvitationView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, token):
+        try:
+            invitation = Invitation.objects.get(token= token)
+        except Invitation.DoesNotExist:
+            return Response({"error": "Invalid invitation token."}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+        if not invitation.is_valid():
+            return Response({"error": "Invitation token has expired or is already used."}, status= status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'valid': True,
+            'email': invitation.email,
+            'role': invitation.role,
+            'organisation': invitation.organisation.name
+        })
+
+        

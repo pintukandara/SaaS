@@ -1,7 +1,11 @@
+from concurrent.interpreters import create
+from datetime import timedelta
+
 from django.utils import timezone
 
 from django.db import models
 from django.conf import settings
+import secrets
 
 # Create your models here.
 
@@ -258,4 +262,41 @@ class Invoice(models.Model):
     
 
 
-        
+class Invitation(models.Model):
+    """Pending invitations for users to join an organisations with specific roles"""
+    ROLE_CHOICE = [
+        ('manager','Manager'),
+        ('employee',"Employee")
+    ]
+    STATUS_CHOICES = [
+        ('pending','Pending'),
+        ('accepted','Accepted'),
+        ('expired',"Expired"),
+        ("revoked","Revoked")
+    ]
+
+    organisation = models.ForeignKey(Organisation,on_delete=models.CASCADE,related_name='invitations')
+    email = models.EmailField()
+    role = models.CharField(max_length=20,choices=ROLE_CHOICE,default='employee')
+    token = models.CharField(max_length=64,unique=True,default = secrets.token_urlsafe)
+    invited_by = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,blank=True,related_name='sent_invitations')
+    status = models.CharField(max_length=20,choices=STATUS_CHOICES,default= 'pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        unique_together = ['organisation','email']
+        ordering= ['-created_at']
+
+
+    def save(self, *args, **kwargs):
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timedelta(days=7)
+
+        super().save(*args, **kwargs)
+
+    def is_valid(self):
+        return self.status == 'pending' and self.expires_at > timezone.now()
+
+    def __str__(self):
+        return f"Invitation for {self.email} to join {self.organisation.name} as {self.role}"

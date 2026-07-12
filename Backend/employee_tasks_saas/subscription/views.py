@@ -1,17 +1,19 @@
-from datetime import timedelta
-
-from .models import SubscriptionPlan,Organisation,OrganisationMember,Subscription,UsageTracking
-from rest_framework.permissions import IsAuthenticated
 from .serializers import SubscriptionPlanSerializer,OrganisationMemberSerializer,OrganisationSerializer,SubscriptionSerializer,UsageTrackingSerializer
-
-from django.shortcuts import render
-from rest_framework import viewsets
-from django.db.models import Q
-from rest_framework import status
-from django.utils import timezone
+from .models import SubscriptionPlan,Organisation,OrganisationMember,Subscription,UsageTracking
+from .permissions import IsOrganisationOwner,HasActiveSubscription,IsOrganisationAdmin, WithInUsageLimits
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from .permissions import IsOrganisationOwner,HasActiveSubscription
+from rest_framework import viewsets
+from django.shortcuts import render
+from rest_framework import status
+from django.utils import timezone
+from django.db.models import Q
+from datetime import timedelta
+from users.models import CustomUser
+
+
+
 
 # Create your views here.
 class SubscriptionPlanViewSet(viewsets.ReadOnlyModelViewSet):
@@ -68,49 +70,59 @@ class OrganisationViewSet(viewsets.ModelViewSet):
 
             )
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def invite_member(self,request,pk=None):
-    #    invite a member to the organisation
-        org = self.get_object()
-        email = request.data.get('email')
-        role = request.data.get('role', 'member')
+from django.core.mail import send_mail
+from users.models import CustomUser
+from .models import Invitation
 
-        if not email:
-            return Response(
-                {'error': 'email is required'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        from users.models import CustomUser
-        try:
-            user = CustomUser.objects.get(email = email)
-            if user.get_organisation:
-                return Response(
-                    {'error': 'User is already a member of another organization'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-        except CustomUser.DoesNotExist:
-            return Response(
-                {
-                    'error': 'User with this email does not exist'},
-                    status=status.HTTP_404_NOT_FOUND
-                
-            )
-        # Add user to the organisation
-        user.organization = org
-        user.save()
+@action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsOrganisationAdmin, WithInUsageLimits])
+def invite_member(self, request, pk=None):
+    """
+    Owner/Admin invites a member to the organisation by email + assigns role.
+    The invited person NEVER chooses their own role.
+    """
+    org = self.get_object()
+    email = request.data.get('email')
+    role = request.data.get('role')  # 'manager' or 'employee' — chosen by inviter
 
-        OrganisationMember.objects.create(
-            organization=org,
-            user=user,
-            role=role,
-            invited_by=request.user,
-        )
+    if not email or role not in ['manager', 'employee']:
         return Response(
-            {'message': f'User {user.email} added to organization'},
-            status=status.HTTP_201_CREATED
+            {'error': 'email and a valid role (manager/employee) are required'},
+            status=status.HTTP_400_BAD_REQUEST
         )
+
+    if CustomUser.objects.filter(email=email).exists():
+        return Response(
+            {'error': 'A user with this email already has an account'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    invitation, created = Invitation.objects.update_or_create(
+        organisation=org,
+        email=email,
+        defaults={
+            'role': role,
+            'invited_by': request.user,
+            'status': 'pending',
+        }
+    )
+
+    invite_link = f"http://localhost:5173/accept-invite/{invitation.token}"
+
+    send_mail(
+        f'You are invited to join {org.name}',
+        f'Click here to accept: {invite_link}\nYou will join as: {role}',
+        'noreply@taskflow.com',
+        [email],
+        fail_silently=True,  # ✅ add this — don't crash the request if EMAIL_BACKEND isn't configured yet
+    )
+
+    return Response({
+        'message': f'Invitation sent to {email} as {role}',
+        'invite_link': invite_link,  # remove in production, only for dev testing
+    }, status=status.HTTP_201_CREATED)
+
+
+
     @action(detail=True, methods=['post'], url_path='leave-organisation') 
     def leave_organisation(self,request,pk=None):
         org = self.get_object()
