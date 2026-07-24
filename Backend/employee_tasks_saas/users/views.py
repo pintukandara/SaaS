@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import viewsets
 
-from Backend.employee_tasks_saas.subscription.models import Invitation
+from subscription.models import Invitation
 from .models import CustomUser
 from .serializers import RegisterSerializer, UserSerializer, UserListSerializer, AcceptInvitationSerializer 
 

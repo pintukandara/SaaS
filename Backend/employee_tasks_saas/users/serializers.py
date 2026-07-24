@@ -52,7 +52,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['username', 'email', 'password', 'password2', 'first_name', 'last_name']
+        fields = ['username', 'email', 'password', 'password2', 'first_name', 'last_name', 'organisation_name']
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:
@@ -112,6 +112,7 @@ class AcceptInvitationSerializer(serializers.ModelSerializer):
     # Role and organisation will be set in the view based on the invitation
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
     password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'},)
+    token = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = CustomUser
