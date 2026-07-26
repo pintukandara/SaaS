@@ -1,4 +1,3 @@
-from concurrent.interpreters import create
 from datetime import timedelta
 
 from django.utils import timezone
