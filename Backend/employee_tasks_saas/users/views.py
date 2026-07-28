@@ -10,7 +10,7 @@ from .serializers import RegisterSerializer, UserSerializer, UserListSerializer,
 
 
 class RegisterView(generics.CreateAPIView):
-    queryset = CustomUser.objects.all()
+        
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
     parser_classes = [MultiPartParser, FormParser]

@@ -1,6 +1,7 @@
 from .serializers import SubscriptionPlanSerializer,OrganisationMemberSerializer,OrganisationSerializer,SubscriptionSerializer,UsageTrackingSerializer
 from .models import SubscriptionPlan,Organisation,OrganisationMember,Subscription,UsageTracking
 from .permissions import IsOrganisationOwner,HasActiveSubscription,IsOrganisationAdmin, WithInUsageLimits
+from .tasks import send_invitation_email
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -11,7 +12,7 @@ from django.utils import timezone
 from django.db.models import Q
 from datetime import timedelta
 from users.models import CustomUser
-
+baseUrl = f"http://localhost:5173"
 
 
 
@@ -22,10 +23,6 @@ class SubscriptionPlanViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SubscriptionPlanSerializer
     permission_classes = [] #Allow anyone to view Subscription Plans
 
-
-
-
-
 class OrganisationViewSet(viewsets.ModelViewSet):
     serializer_class = OrganisationSerializer
     permission_classes = [IsAuthenticated]
@@ -34,9 +31,7 @@ class OrganisationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         return Organisation.objects.filter(
-            Q(owner=user) | 
-            Q(member__user=user) | 
-            Q(member__is_active=True)
+            Q(owner=user) | Q(member__user=user, member__is_active=True)
             ).distinct()
     
     def perform_create(self,serializer):
@@ -70,56 +65,49 @@ class OrganisationViewSet(viewsets.ModelViewSet):
 
             )
 
-from django.core.mail import send_mail
-from users.models import CustomUser
-from .models import Invitation
+    from users.models import CustomUser
+    from .models import Invitation
 
-@action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsOrganisationAdmin, WithInUsageLimits])
-def invite_member(self, request, pk=None):
-    """
-    Owner/Admin invites a member to the organisation by email + assigns role.
-    The invited person NEVER chooses their own role.
-    """
-    org = self.get_object()
-    email = request.data.get('email')
-    role = request.data.get('role')  # 'manager' or 'employee' — chosen by inviter
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated, IsOrganisationAdmin, WithInUsageLimits])
+    def invite_member(self, request, pk=None):
+        """
+        Owner/Admin invites a member to the organisation by email + assigns role.
+        The invited person NEVER chooses their own role.
+        """
+        org = self.get_object()
+        email = request.data.get('email')
+        role = request.data.get('role')  # 'manager' or 'employee' — chosen by inviter
 
-    if not email or role not in ['manager', 'employee']:
-        return Response(
-            {'error': 'email and a valid role (manager/employee) are required'},
-            status=status.HTTP_400_BAD_REQUEST
+        if not email or role not in ['manager', 'employee']:
+            return Response(
+                {'error': 'email and a valid role (manager/employee) are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if CustomUser.objects.filter(email=email).exists():
+            return Response(
+                {'error': 'A user with this email already has an account'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        invitation, created = Invitation.objects.update_or_create(
+            organisation=org,
+            email=email,
+            defaults={
+                'role': role,
+                'invited_by': request.user,
+                'status': 'pending',
+            }
         )
 
-    if CustomUser.objects.filter(email=email).exists():
-        return Response(
-            {'error': 'A user with this email already has an account'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        invite_link = f"{baseUrl}/accept-invite/{invitation.token}"
 
-    invitation, created = Invitation.objects.update_or_create(
-        organisation=org,
-        email=email,
-        defaults={
-            'role': role,
-            'invited_by': request.user,
-            'status': 'pending',
-        }
-    )
+        send_invitation_email.delay(email, org.name, role, invite_link)
 
-    invite_link = f"http://localhost:5173/accept-invite/{invitation.token}"
-
-    send_mail(
-        f'You are invited to join {org.name}',
-        f'Click here to accept: {invite_link}\nYou will join as: {role}',
-        'noreply@taskflow.com',
-        [email],
-        fail_silently=True,  # ✅ add this — don't crash the request if EMAIL_BACKEND isn't configured yet
-    )
-
-    return Response({
-        'message': f'Invitation sent to {email} as {role}',
-        'invite_link': invite_link,  # remove in production, only for dev testing
-    }, status=status.HTTP_201_CREATED)
+        return Response({
+            'message': f'Invitation sent to {email} as {role}',
+            'invite_link': invite_link,  # remove in production, only for dev testing
+        }, status=status.HTTP_201_CREATED)
 
 
 
@@ -228,10 +216,6 @@ def invite_member(self, request, pk=None):
             'message': f'Organisation "{org_name}" deleted successfully'
         })
     
-
-
-    
-
 class SubscriptionViewSet(viewsets.ModelViewSet):
     serializer_class = SubscriptionSerializer
     permission_classes = [IsAuthenticated]
@@ -291,17 +275,15 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
             'message': f'Upgraded to {new_plan.display_name}',
             'subscription': SubscriptionSerializer(new_sub).data
         })
-    
-        
-        
+         
 class UsageTrackingViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UsageTrackingSerializer
     permission_classes = [IsAuthenticated, HasActiveSubscription]
 
     def get_queryset(self):
-        if self.request.user.current_organization:
+        if self.request.user.current_organisation:
             return UsageTracking.objects.filter(
-                organization=self.request.user.current_organization
+                organization=self.request.user.current_organisation
             )
         return UsageTracking.objects.none()
     

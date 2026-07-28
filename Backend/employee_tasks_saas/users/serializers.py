@@ -22,8 +22,10 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_avatar_url(self, obj):
         if obj.avatar:
+            print(self.context)
             request = self.context.get('request')
             if request:
+                print(request)
                 return request.build_absolute_uri(obj.avatar.url)
             return obj.avatar.url
         return None
@@ -59,6 +61,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"password": "Passwords don't match."})
         if CustomUser.objects.filter(email=attrs['email']).exists():
             raise serializers.ValidationError({"email": "Email already registered."})
+        if CustomUser.objects.filter(username=attrs['username']).exists():
+            raise serializers.ValidationError({"username":"this username already exists"})
         return attrs
 
     def create(self, validated_data):

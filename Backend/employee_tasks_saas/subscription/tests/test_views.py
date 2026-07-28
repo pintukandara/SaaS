@@ -110,7 +110,7 @@ class OrganisationViewSetTests(APITestCase):
         self.client.force_authenticate(self.outsider)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['count'], 0)
 
     def test_create_organisation_sets_owner_from_request_user(self):
         self.client.force_authenticate(self.outsider)
@@ -149,7 +149,7 @@ class OrganisationViewSetTests(APITestCase):
         self.client.force_authenticate(self.outsider)
         url = reverse('organisations-detail', args=[self.org.id])
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
 class SubscriptionViewSetTests(APITestCase):

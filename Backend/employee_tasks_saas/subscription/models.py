@@ -38,15 +38,13 @@ class SubscriptionPlan(models.Model):
     
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    max_tasks_per_month = models.IntegerField(default=1000)  # Example of a specific feature limit
+    max_tasks_per_month = models.IntegerField(default=100)  # Example of a specific feature limit
     
     class Meta:
         ordering = ['price']
     
     def __str__(self):
         return f"{self.display_name} - ${self.price}/{self.billing_period}"
-
-
 
 class Organisation(models.Model):
     # companies and organisation that subscribe to the service
@@ -178,8 +176,7 @@ class OrganisationMember(models.Model):
                 verbose_name_plural = 'Organisation Members' 
             def __str__(self):
                 return f"{self.user.username} - {self.organisation.name} ({self.role})"
-            
-    
+               
 class UsageTracking(models.Model):
     """Track usage for billing and limits"""
     organisation = models.ForeignKey(
@@ -207,7 +204,6 @@ class UsageTracking(models.Model):
     
     def __str__(self):
         return f"{self.organisation.name} - {self.year}/{self.month}"
-
 
 class Invoice(models.Model):
     """Billing invoices"""
@@ -257,9 +253,6 @@ class Invoice(models.Model):
     
     def __str__(self):
         return f"{self.invoice_number} - {self.organisation.name}"
-
-    
-
 
 class Invitation(models.Model):
     """Pending invitations for users to join an organisations with specific roles"""
