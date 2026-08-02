@@ -5,7 +5,7 @@ from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import send_mail
 from django.conf import settings
-from Backend.employee_tasks_saas.users.utils import generate_email_verify_token
+from .utils import generate_email_verify_token
 from .models import CustomUser
 from celery import shared_task
 

@@ -14,12 +14,14 @@ class Command(BaseCommand):
                 'max_users': 3,
                 'max_projects': 3,
                 'max_tasks_per_month': 50,
+
                 'max_storage_mb': 500,
                 'has_advanced_analytics': False,
                 'has_priority_support': False,
                 'has_api_access': False,
                 'has_custom_branding': False,
                 'has_sso': False,
+                'razorpay_plan_id': None
             },
             {
                 'name': 'starter',
@@ -35,6 +37,7 @@ class Command(BaseCommand):
                 'has_api_access': True,
                 'has_custom_branding': False,
                 'has_sso': False,
+                'razorpay_plan_id': 'plan_TKpW36P92xwj1p'
             },
             {
                 'name': 'professional',
@@ -50,6 +53,7 @@ class Command(BaseCommand):
                 'has_api_access': True,
                 'has_custom_branding': True,
                 'has_sso': False,
+                'razorpay_plan_id': 'plan_TKpZAxbMnAVXWH'
             },
             {
                 'name': 'enterprise',
@@ -65,17 +69,20 @@ class Command(BaseCommand):
                 'has_api_access': True,
                 'has_custom_branding': True,
                 'has_sso': True,
+                'razorpay_plan_id': 'plan_TKpajCGmfjmWGm'
+
             }
         ]
 
         for plan_data in plans:
-            plan,created = SubscriptionPlan.objects.get_or_create(name = plan_data['name'] ,defaults= plan_data)
+            plan, created = SubscriptionPlan.objects.update_or_create(
+                name=plan_data['name'],
+                defaults=plan_data
+            )
             if created:
                 self.stdout.write(self.style.SUCCESS(f"Plan Created: {plan.display_name}"))
             else:
-                self.stdout.write(
-                    self.style.WARNING(f'  Updated plan: {plan.display_name}')
-                )
+                self.stdout.write(self.style.SUCCESS(f"Plan Updated: {plan.display_name}"))
 
-        self.stdout.write(self.style.SUCCESS('\n All plans created/updated!'))
+        self.stdout.write(self.style.SUCCESS('\nAll plans created/updated!'))
 

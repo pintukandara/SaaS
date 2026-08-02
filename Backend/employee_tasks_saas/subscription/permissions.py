@@ -80,13 +80,13 @@ class WithInUsageLimits(permissions.BasePermission):
         if not request.user or not request.user.is_authenticated:
             return False
         
-        org = request.user.current_organization
+        org = request.user.current_organisation
         if not org:
             return False
         
         sub = org.active_subscription
         if not sub:
-            return False
+            return True
         
         plan = sub.plan
         

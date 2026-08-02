@@ -6,6 +6,8 @@ from django.db import models
 from django.conf import settings
 import secrets
 
+from django.utils.text import slugify
+
 # Create your models here.
 
 class SubscriptionPlan(models.Model):
@@ -16,6 +18,14 @@ class SubscriptionPlan(models.Model):
         ('professional', 'Professional'),
         ('enterprise', 'Enterprise'),
     ]
+
+    razorpay_plan_id = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        unique=True,
+        help_text="Razorpay's plan_id for this tier. Null for the free plan."
+    )
 
     name = models.CharField(max_length=50, choices = PLAN_TYPES, unique= True)
     display_name = models.CharField(max_length=100)
@@ -75,8 +85,16 @@ class Organisation(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    razorpay_customer_id = models.CharField(max_length=255, blank=True, null=True, help_text="Razorpay's customer_id for this organisation.")
 
     class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['owner','name'],
+                name="unique_org_per_owner"
+
+            )
+        ]
         ordering = ['-created_at']
         verbose_name = 'Organisation' 
         verbose_name_plural = 'Organisations' 
@@ -99,6 +117,14 @@ class Organisation(models.Model):
     @property
     def member_count(self):
         return self.member.count()
+
+    
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+
+        super().save(*args, **kwargs)
     
 class Subscription(models.Model):
         STATUS_CHOICES = [
@@ -115,7 +141,7 @@ class Subscription(models.Model):
         # Billing
 
         start_date = models.DateTimeField()
-        end_date = models.DateTimeField()
+        end_date = models.DateTimeField(default=timezone.now() + timedelta(days=30))
         next_billing_date = models.DateTimeField(default=None, null=True, blank=True)
 
 
@@ -292,3 +318,47 @@ class Invitation(models.Model):
 
     def __str__(self):
         return f"Invitation for {self.email} to join {self.organisation.name} as {self.role}"
+
+class Payment(models.Model):
+    """Payment records for subscriptions and invoices"""
+    STATUS_CHOICES = [
+        ('initiated', 'Initiated'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+        ('refunded', 'Refunded'),
+    ]
+
+    organisation = models.ForeignKey(
+        Organisation,
+        on_delete=models.CASCADE,
+        related_name='payments'
+    )
+    subscription = models.ForeignKey(
+        Subscription,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='payments'
+    )
+    invoice = models.ForeignKey(
+        Invoice,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='payments'
+    )
+
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=10, default='INR')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='initiated')
+
+    razorpay_payment_id = models.CharField(max_length=255, blank=True)
+    razorpay_order_id = models.CharField(max_length=255, blank=True)
+    razorpay_signature = models.CharField(max_length=255, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Payment of {self.amount} {self.currency} for {self.organisation.name} - Status: {self.status}"

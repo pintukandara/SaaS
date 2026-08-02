@@ -24,10 +24,12 @@ django-stubs-ext==5.2.9
 djangorestframework==3.14.0
 djangorestframework-stubs==3.16.8
 djangorestframework_simplejwt==5.5.1
+drf-spectacular==0.30.0
 gunicorn==21.2.0
 httplib2==0.22.0
 idna==3.10
 inflect==7.3.1
+inflection==0.5.1
 Jinja2==3.1.6
 jsonpatch==1.32
 jsonpointer==2.4
@@ -59,10 +61,13 @@ python-decouple==3.8
 python-dotenv==1.0.1
 pytz==2025.2
 PyYAML==6.0.2
+razorpay==2.0.1
+redis==8.1.0
 referencing==0.36.2
 requests==2.32.3
+rest-framework-simplejwt==0.0.2
 rich==13.9.4
-rpds-py>=0.21.0
+rpds-py==2026.6.3
 setproctitle==1.3.6
 setuptools==82.0.0
 six==1.17.0
@@ -73,6 +78,7 @@ typing_extensions==4.13.2
 tzdata==2025.3
 tzlocal==5.3.1
 uc-micro-py==1.0.3
+uritemplate==4.2.0
 urllib3==2.3.0
 vine==5.1.0
 wcwidth==0.6.0

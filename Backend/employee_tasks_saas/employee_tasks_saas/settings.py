@@ -83,9 +83,10 @@ DATABASES = {
         'USER': config('DB_USER'),
         'PASSWORD': config('DB_PASSWORD'),
         'HOST': config('DB_HOST', default='127.0.0.1'),
-        'PORT': config('DB_PORT', default='3307'),
+        'PORT': config('DB_PORT', default='3306'),
     }
 }
+
 
 
 # Password validation
@@ -187,6 +188,8 @@ CORS_ALLOW_CREDENTIALS = True
 CELERY_TIMEZONE = config('TIME_ZONE', default='Asia/Kolkata')
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_BROKER_URL = config('CELERY_BROKER_URL',default = 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = config('CELERY_RESULT_BACKEND',default = 'redis://localhost:6379/0')
 
 
 # Email Configuration (for future features)
@@ -243,3 +246,7 @@ LOGGING = {
         },
     },
 }
+
+# 
+RAZORPAY_KEY_ID = config("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = config("RAZORPAY_KEY_SECRET")

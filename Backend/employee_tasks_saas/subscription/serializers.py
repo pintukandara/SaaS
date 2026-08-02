@@ -21,11 +21,11 @@ class OrganisationSerializer(serializers.ModelSerializer):
         model = Organisation
         fields = ['id', 'name', 'slug', 'description', 'email', 'phone',
             'website', 'address', 'city', 'country', 'logo',
-            'owner', 'owner_name', 'member_count',
+            'owner_name', 'member_count',
             'current_plan_name', 'subscription_status',
             'is_active', 'created_at']
         read_only_fields = ['id','created_at',
-                            'owner']
+                            'owner','slug']
     def get_owner_name(self,obj):
         return f"{obj.owner.first_name} {obj.owner.last_name}".strip() or obj.owner.username
     
@@ -88,9 +88,27 @@ class UsageTrackingSerializer(serializers.ModelSerializer):
 
 
 class InvoiceSerializer(serializers.ModelSerializer):
+
     organization_name = serializers.CharField(source='organization.name', read_only=True)
     
     class Meta:
         model = Invoice
         fields = '__all__'
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class PaymentSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    currency = serializers.CharField(default="INR")
+    receipt = serializers.CharField()
+    amount = serializers.IntegerField()
+    org_name = serializers.CharField()
+    subscription = serializers.CharField()
+
+
+class PaymentVerificationSerializer(serializers.Serializer):
+    razorpay_order_id = serializers.CharField()
+    razorpay_payment_id = serializers.CharField()
+    razorpay_signature = serializers.CharField()
+
+
