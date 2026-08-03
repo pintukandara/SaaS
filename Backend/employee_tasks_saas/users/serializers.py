@@ -5,6 +5,7 @@ from .models import CustomUser
 from subscription.models import Organisation, OrganisationMember, Subscription, SubscriptionPlan,Invitation
 from django.utils.text import slugify
 from datetime import timedelta
+from django.utils import timezone
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -63,6 +64,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"email": "Email already registered."})
         if CustomUser.objects.filter(username=attrs['username']).exists():
             raise serializers.ValidationError({"username":"this username already exists"})
+        if Organisation.objects.filter(name=attrs['organisation_name']).exists():
+            raise serializers.ValidationError({"organisation_name": "This Organisation already exists Please login with your credentials."})
         return attrs
 
     def create(self, validated_data):
@@ -81,10 +84,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         base_slug = slugify(org_name)
         slug = base_slug
-        counter = 1
-        while Organisation.objects.filter(slug= slug).exists():
-            slug = f"{base_slug}-{counter}"
-            counter += 1
+        
 
         org = Organisation.objects.create(
             name=org_name,
@@ -92,23 +92,22 @@ class RegisterSerializer(serializers.ModelSerializer):
             owner=user,
             email = user.email
         )
-        user.organisation = org
+       
+        user.current_organisation = org
         user.save()
 
         OrganisationMember.objects.create(organisation=org,user = user,role = "admin")
         free_plan = SubscriptionPlan.objects.filter(name="free").first()
 
         if free_plan:
-            Subscription.objects.create(
-                organisation=org,
-                plan=free_plan,
-                start_date = datetime.now(),
-                end_date = datetime.now() + timedelta(days=14),
-                is_Trial = True,
-                trial_end_date = datetime.now() + timedelta(days=14),
-                status= 'trial'
-            )
-
+            new_sub = Subscription.objects.create(
+                            organisation=org,
+                            plan=free_plan,
+                            status="active",
+                            start_date=timezone.now(),
+                            end_date=timezone.now() + timedelta(days=30),  # Monthly
+                            is_trial=True,
+                        )
 
         return user
 
