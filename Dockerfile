@@ -32,4 +32,4 @@ COPY Backend/employee_tasks_saas/ /app/
 EXPOSE 8000
 
 # Start the Django development server
-CMD ["gunicorn","employee_tasks_saas.wsgi.application","--bind","0.0.0.0:8000","--workers","3"]
+CMD ["gunicorn","employee_tasks_saas.wsgi:application","--bind","0.0.0.0:8000","--workers","3"]
