@@ -353,6 +353,7 @@ class Payment(models.Model):
     razorpay_payment_id = models.CharField(max_length=255, blank=True)
     razorpay_order_id = models.CharField(max_length=255, blank=True)
     razorpay_signature = models.CharField(max_length=255, blank=True)
+    razorpay_event_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

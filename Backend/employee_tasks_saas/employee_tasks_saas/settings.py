@@ -13,7 +13,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='')
 
 
 # Application definition
@@ -249,4 +249,5 @@ LOGGING = {
 
 # 
 RAZORPAY_KEY_ID = config("RAZORPAY_KEY_ID")
+RAZORPAY_WEBHOOK_SECRET = config('RAZORPAY_WEBHOOK_SECRET')
 RAZORPAY_KEY_SECRET = config("RAZORPAY_KEY_SECRET")

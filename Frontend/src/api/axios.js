@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+const apiBaseUrl = (
+    import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
+).replace(/\/$/, '');
+
 const api = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api',
+    baseURL: apiBaseUrl,
 });
 
 // Add token to every request
@@ -30,7 +34,7 @@ api.interceptors.response.use(
             try {
                 const refreshToken = localStorage.getItem('refresh_token');
                 const response = await axios.post(
-                    'http://127.0.0.1:8000/api/auth/token/refresh/',
+                    `${apiBaseUrl}/auth/token/refresh/`,
                     { refresh: refreshToken }
                 );
 

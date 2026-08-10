@@ -22,7 +22,8 @@ WORKDIR /app
 COPY requirements.txt /app/
 
 # Install Python packages
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt gunicorn
+
 
 # Copy the Backend project code to the container
 COPY Backend/employee_tasks_saas/ /app/
@@ -31,4 +32,4 @@ COPY Backend/employee_tasks_saas/ /app/
 EXPOSE 8000
 
 # Start the Django development server
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["gunicorn","employee_tasks_saas.wsgi.application","--bind","0.0.0.0:8000","--workers","3"]

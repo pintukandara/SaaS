@@ -202,7 +202,7 @@ class OrganisationViewSet(viewsets.ModelViewSet):
     def remove_member(self, request, pk=None):
         org = self.get_object()
         user_id = request.data.get("user_id")
-        if org.owner != request.user | request.user.role != "admin":
+        if org.owner != request.user and request.user.role != "admin":
             return Response(
                 {"message": "Only owner or admin can remove members"},
                 status=status.HTTP_400_BAD_REQUEST,
