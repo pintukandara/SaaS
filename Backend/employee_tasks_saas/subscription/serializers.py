@@ -64,7 +64,7 @@ class OrganisationMemberSerializer(serializers.ModelSerializer):
         model = OrganisationMember
 
         fields = [
-            'id', 'organization', 'organization_name',
+            'id', 'organisation', 'organisation_name',
             'user', 'user_id', 'role',
             'invited_by', 'invited_by_name',
             'invited_at', 'joined_at', 'is_active'
@@ -89,7 +89,7 @@ class UsageTrackingSerializer(serializers.ModelSerializer):
 
 class InvoiceSerializer(serializers.ModelSerializer):
 
-    organization_name = serializers.CharField(source='organization.name', read_only=True)
+    organisation_name = serializers.CharField(source='organisation.name', read_only=True)
     
     class Meta:
         model = Invoice

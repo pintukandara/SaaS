@@ -62,7 +62,7 @@ class CanAccessFeature(permissions.BasePermission):
             return False
         
         if self.feature_name:
-            return sub.can_use_feature(self.feature_name)
+            return sub.can_use_features(self.feature_name)
         return True
     
 class HasAdvancedAnalytics(CanAccessFeature):

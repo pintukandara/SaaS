@@ -129,24 +129,33 @@ class RazorpayWebhookView(APIView):
     def _record_payment(self, payload, event_id, subscription, status_value, failure_reason=''):
         payment_entity = payload.get('payload', {}).get('payment', {}).get('entity', {})
         payment_id = payment_entity.get('id')
-
+ 
         if payment_id:
             existing = Payment.objects.filter(razorpay_payment_id=payment_id).first()
             if existing:
                 return existing  # already recorded by an earlier event for this same payment
-
+ 
         return Payment.objects.create(
             organisation=subscription.organisation if subscription else None,
             subscription=subscription,
-            razorpay_payment_id=payment_id,
-            razorpay_order_id=payment_entity.get('order_id'),
-            razorpay_subscription_id=payment_entity.get('subscription_id'),
+            razorpay_payment_id=payment_id or '',
+            razorpay_order_id=payment_entity.get('order_id') or '',
+            # Razorpay doesn't reliably include `subscription_id` on the
+            # payment entity itself (e.g. UPI charges omit it). We already
+            # know which local Subscription this event belongs to, so
+            # prefer that; fall back to the payment entity just in case.
+            razorpay_subscription_id=(
+                (subscription.razorpay_subscription_id if subscription else '')
+                or payment_entity.get('subscription_id')
+                or ''
+            ),
             razorpay_event_id=event_id,
             amount=(payment_entity.get('amount', 0) or 0) / 100,
             currency=payment_entity.get('currency', 'INR'),
             status=status_value,
-            method=payment_entity.get('method', ''),
+            method=payment_entity.get('method', '') or '',
             failure_reason=failure_reason,
             raw_response=payload,
         )
-
+ 
+ 

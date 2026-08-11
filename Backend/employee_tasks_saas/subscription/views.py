@@ -260,7 +260,7 @@ class OrganisationViewSet(viewsets.ModelViewSet):
 
         from users.models import CustomUser
 
-        CustomUser.objects.filter(organisation=org).update(organisation=None)
+        CustomUser.objects.filter(current_organisation=org).update(current_organisation=None)
 
         org_name = org.name
         org.delete()
@@ -316,7 +316,7 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
                 {"error": "Plan not found"}, status=status.HTTP_404_NOT_FOUND
             )
 
-        if new_plan != "free" and not new_plan.razorpay_plan_id:
+        if new_plan.name != "free" and not new_plan.razorpay_plan_id:
             return Response(
                 {"error": "This Plan is not setup for billing yet"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -402,7 +402,7 @@ class UsageTrackingViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=False, methods=["get"])
     def current_month(self, request):
         """Get current month usage"""
-        org = request.user.current_organization
+        org = request.user.current_organisation
         if not org:
             return Response(
                 {"error": "No organisation"}, status=status.HTTP_400_BAD_REQUEST

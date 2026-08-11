@@ -8,6 +8,14 @@ import secrets
 
 from django.utils.text import slugify
 
+def get_default_end_date():
+    """
+    Callable default (not a call result!) so this is evaluated fresh
+    every time a Subscription is created, instead of once when Django
+    first imports this module.
+    """
+    return timezone.now() + timedelta(days=30)
+
 # Create your models here.
 
 class SubscriptionPlan(models.Model):
@@ -141,7 +149,7 @@ class Subscription(models.Model):
         # Billing
 
         start_date = models.DateTimeField()
-        end_date = models.DateTimeField(default=timezone.now() + timedelta(days=30))
+        end_date = models.DateTimeField(default=get_default_end_date())
         next_billing_date = models.DateTimeField(default=None, null=True, blank=True)
 
 
@@ -323,11 +331,11 @@ class Payment(models.Model):
     """Payment records for subscriptions and invoices"""
     STATUS_CHOICES = [
         ('initiated', 'Initiated'),
-        ('completed', 'Completed'),
+        ('captured', 'Captured'),
         ('failed', 'Failed'),
         ('refunded', 'Refunded'),
     ]
-
+ 
     organisation = models.ForeignKey(
         Organisation,
         on_delete=models.CASCADE,
@@ -345,21 +353,26 @@ class Payment(models.Model):
         null=True,
         related_name='payments'
     )
-
+ 
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     currency = models.CharField(max_length=10, default='INR')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='initiated')
-
+ 
     razorpay_payment_id = models.CharField(max_length=255, blank=True)
     razorpay_order_id = models.CharField(max_length=255, blank=True)
+    razorpay_subscription_id = models.CharField(max_length=255, blank=True)
     razorpay_signature = models.CharField(max_length=255, blank=True)
     razorpay_event_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
-
+ 
+    method = models.CharField(max_length=50, blank=True, help_text="e.g. card, upi, netbanking")
+    failure_reason = models.TextField(blank=True)
+    raw_response = models.JSONField(blank=True, null=True, help_text="Full webhook payload, kept for audits/disputes")
+ 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+ 
     class Meta:
         ordering = ['-created_at']
-
+ 
     def __str__(self):
         return f"Payment of {self.amount} {self.currency} for {self.organisation.name} - Status: {self.status}"
