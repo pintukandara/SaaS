@@ -108,9 +108,9 @@ class OrganisationViewSet(viewsets.ModelViewSet):
         email = request.data.get("email")
         role = request.data.get("role")  # 'manager' or 'employee' — chosen by inviter
 
-        if not email or role not in ["manager", "employee"]:
+        if not email or role not in ["manager", "employee","admin"]:
             return Response(
-                {"error": "email and a valid role (manager/employee) are required"},
+                {"error": "email and a valid role (manager/employee/admin) are required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

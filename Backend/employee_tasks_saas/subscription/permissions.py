@@ -1,4 +1,9 @@
 from rest_framework import permissions
+from users.models import CustomUser
+from django.utils import timezone
+from typing import cast
+from projects.models import Project
+from .models import UsageTracking
 
 class HasActiveSubscription(permissions.BasePermission):
     # pehle Checck krunga ki company ka koi subscription plan hai ya ni
@@ -11,12 +16,13 @@ class HasActiveSubscription(permissions.BasePermission):
             return False
         
         # agar user company se belong nhi karta toh permission nhi dunga
-        if not request.user.current_organisation:
+        user: CustomUser = cast(CustomUser, request.user)
+        if not user.current_organisation:
             self.message = "You are not part of any organisation"
             return False
         
         # agar company ka koi active plan nhi hai toh access nhi dena
-        org = request.user.current_organisation
+        org = user.current_organisation
         if not org.active_subscription:
             self.message =  f'Organisation {org.name} does not have active subscription'
             return False
@@ -28,19 +34,21 @@ class IsOrganisationOwner(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         org = obj if hasattr(obj, 'owner') else obj.organization
-        return org.owner == request.user
+        user: CustomUser = cast(CustomUser, request.user)
+        return org.owner == user
     
 class IsOrganisationAdmin(permissions.BasePermission):
     # check karte hai ki agar user organisation ka owner ya admin hai ki nhi
     def has_object_permission(self, request, view, obj):
         from .models import OrganisationMember
         org = obj if hasattr(obj,'owner') else obj.organisation
+        user: CustomUser = cast(CustomUser, request.user)
 
-        if org.owner == request.user:
+        if org.owner == user:
             return True
-        
+
         membership = OrganisationMember.objects.filter(organisation = org,
-                                                       user = request.user,
+                                                       user = user,
                                                        role__in = ['owner','admin'],
                                                        is_active = True
                                                        ).first()
@@ -53,7 +61,8 @@ class CanAccessFeature(permissions.BasePermission):
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        org = request.user.current_organisation
+        user: CustomUser = cast(CustomUser, request.user)
+        org = user.current_organisation
         if not org:
             return False
         sub = org.active_subscription
@@ -76,30 +85,81 @@ class HasAPIAccess(CanAccessFeature):
 
 class WithInUsageLimits(permissions.BasePermission):
 
-     def has_permission(self, request, view):
+    def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
             return False
-        
-        org = request.user.current_organisation
+        user: CustomUser = cast(CustomUser, request.user)
+
+        org = user.current_organisation
         if not org:
             return False
-        
+
         sub = org.active_subscription
         if not sub:
             return True
-        
+
         plan = sub.plan
-        
+
         # Check user limit
         if org.member_count >= plan.max_users:
             self.message = f"User limit reached ({plan.max_users} users max)"
             return False
-        
-        # Check project limit
-        project_count = org.owner.owned_projects.count()
+
+        return True
+
+
+class WithInProjectLimit(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        if getattr(view, 'action', None) != 'create':
+            return True
+
+        user: CustomUser = cast(CustomUser, request.user)
+        org = user.current_organisation
+        if not org:
+            return False
+        sub = org.active_subscription
+        if not sub:
+            return False
+
+        plan = sub.plan
+
+        project_count = Project.objects.filter(owner__current_organisation=org).count()
         if project_count >= plan.max_projects:
             self.message = f"Project limit reached ({plan.max_projects} projects max)"
             return False
-        
         return True
-     
+
+
+class WithInTaskLimit(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+
+        if getattr(view, 'action', None) != 'create':
+            return True
+
+        user: CustomUser = cast(CustomUser, request.user)
+        org = user.current_organisation
+        if not org:
+            return False
+        sub = org.active_subscription
+        if not sub:
+            return False
+
+        plan = sub.plan
+
+        now = timezone.now()
+        usage = UsageTracking.objects.filter(
+            organisation=org,
+            year=now.year,
+            month=now.month,
+        ).first()
+        task_count = usage.tasks_created if usage else 0
+        if task_count >= plan.max_tasks_per_month:
+            self.message = f"Task limit reached {plan.max_tasks_per_month} tasks per month max"
+            return False
+        return True
+        

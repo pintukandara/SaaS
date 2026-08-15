@@ -16,11 +16,19 @@ class Project(models.Model):
     description = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='planning')
 
+    organisation = models.ForeignKey(
+        'subscription.Organisation',
+        on_delete=models.CASCADE,
+        related_name='projects',
+        null=True,   # temporary — see migration note below
+        blank=True,
+    )
+
     # Relationships
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        default = 2,
+        
         related_name='owned_projects',
         help_text="Manager responsible for this project",
     )

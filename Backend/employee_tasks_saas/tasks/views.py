@@ -8,10 +8,11 @@ from django.db.models import Q
 from .models import Task, TaskComment
 from .serializers import TaskSerializer, TaskDetailSerializer, TaskCommentSerializer
 from .permissions import TaskPermission
+from subscription.permissions import HasActiveSubscription, WithInTaskLimit
 
 
 class TaskViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated, TaskPermission]
+    permission_classes = [IsAuthenticated, TaskPermission, HasActiveSubscription, WithInTaskLimit]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'priority', 'assigned_to', 'project']
     search_fields = ['title', 'description', 'tags']

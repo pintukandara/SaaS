@@ -1,29 +1,35 @@
+from subscription.permissions import HasActiveSubscription, WithInProjectLimit, WithInUsageLimits
+from .serializers import ProjectSerializer, ProjectDetailSerializer, ProjectMemberSerializer
+from rest_framework.permissions import IsAuthenticated
+from .models import Project, ProjectMember
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
-from .models import Project, ProjectMember
-from .serializers import ProjectSerializer, ProjectDetailSerializer, ProjectMemberSerializer
+from typing import cast
+
+from users.models import CustomUser
+
 from .permissions import ProjectPermission
 
 class ProjectViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated, ProjectPermission]
+    permission_classes = [IsAuthenticated, ProjectPermission, HasActiveSubscription, WithInUsageLimits, WithInProjectLimit]
     
     def get_queryset(self):
-        user = self.request.user
+        user: CustomUser = cast(CustomUser, self.request.user)
         
         if user.role == 'admin':
-            return Project.objects.all()
+            return Project.objects.filter(organisation=user.current_organisation)
         elif user.role == 'manager':
             # Projects they own or manage via team
             return Project.objects.filter(
-                Q(owner=user) | Q(team__manager=user)
+                organisation=user.current_organisation
             ).distinct()
         else:
-            # Projects in teams they're part of
+            # Projects in teams they'repart of
             return Project.objects.filter(
-                team__members__user=user
+                team__members__user=user,
+                organisation=user.current_organisation
             ).distinct()
     
     def get_serializer_class(self):
@@ -33,12 +39,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         """Only admin can create projects"""
-        if self.request.user.role != 'admin':
+        user: CustomUser = cast(CustomUser, self.request.user)
+
+        if user.role != 'admin':
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("Only admins can create projects")
-        
-        # ✅ Just save - no created_by field
-        serializer.save()
+
+
+        serializer.save(owner=user, organisation=user.current_organisation)
     
     @action(detail=True, methods=['post'])
     def add_member(self, request, pk=None):
@@ -54,7 +62,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
             )
         
         try:
-            from users.models import CustomUser
             user = CustomUser.objects.get(id=user_id)
             
             # Check if already a member

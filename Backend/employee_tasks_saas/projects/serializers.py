@@ -27,9 +27,9 @@ class ProjectSerializer(serializers.ModelSerializer):
             'team', 'team_name',
             'start_date', 'end_date',
             'task_count', 'member_count',
-            'created_at', 'updated_at'
+            'created_at', 'updated_at','organisation'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'owner', 'organisation', 'created_at', 'updated_at']
 
     def get_task_count(self, obj):
         return obj.tasks.count()

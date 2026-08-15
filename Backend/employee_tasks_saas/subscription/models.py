@@ -291,6 +291,7 @@ class Invoice(models.Model):
 class Invitation(models.Model):
     """Pending invitations for users to join an organisations with specific roles"""
     ROLE_CHOICE = [
+        ('admin', "Admin"),
         ('manager','Manager'),
         ('employee',"Employee")
     ]

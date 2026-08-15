@@ -12,8 +12,8 @@ class UserSerializer(serializers.ModelSerializer):
     avatar_url = serializers.SerializerMethodField()
     full_name = serializers.SerializerMethodField()
 
-    class Meta:
-        model = CustomUser
+    class Meta(serializers.ModelSerializer.Meta):
+        model = CustomUser  # type: ignore[assignment]
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
             'full_name', 'role', 'phone', 'department', 'avatar',
@@ -31,7 +31,7 @@ class UserSerializer(serializers.ModelSerializer):
             return obj.avatar.url
         return None
 
-    def get_full_name(self, obj):
+    def get_full_name(self, obj)->str:
         return f"{obj.first_name} {obj.last_name}".strip() or obj.username
 
 
@@ -39,8 +39,8 @@ class UserListSerializer(serializers.ModelSerializer):
     """Simplified serializer for lists"""
     full_name = serializers.SerializerMethodField()
 
-    class Meta:
-        model = CustomUser
+    class Meta(serializers.ModelSerializer.Meta):
+        model = CustomUser  # type: ignore[assignment]
         fields = ['id', 'username', 'first_name', 'last_name', 'full_name', 'email', 'role']
 
     def get_full_name(self, obj):
@@ -53,8 +53,8 @@ class RegisterSerializer(serializers.ModelSerializer):
                                       label='Confirm Password')
     organisation_name = serializers.CharField(write_only=True, required=True)
 
-    class Meta:
-        model = CustomUser
+    class Meta(serializers.ModelSerializer.Meta):
+        model = CustomUser  # type: ignore[assignment]
         fields = ['username', 'email', 'password', 'password2', 'first_name', 'last_name', 'organisation_name']
 
     def validate(self, attrs):
@@ -117,8 +117,8 @@ class AcceptInvitationSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'},)
     token = serializers.CharField(write_only=True, required=True)
 
-    class Meta:
-        model = CustomUser
+    class Meta(serializers.ModelSerializer.Meta):
+        model = CustomUser  # type: ignore[assignment]
         fields = ['username', 'password', 'password2', 'first_name', 'last_name','token']
 
     def validate(self, attrs):
@@ -152,14 +152,14 @@ class AcceptInvitationSerializer(serializers.ModelSerializer):
                 role = invitation.role,
                 
             )
-            user.organization = invitation.organisation
+            user.current_organisation = invitation.organisation
             user.save()
 
 
             OrganisationMember.objects.create(
                 organisation = invitation.organisation,
                 user = user,
-                role = 'member',
+                role = invitation.role,
                 invited_by = invitation.invited_by
 
             )
