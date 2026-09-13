@@ -13,10 +13,26 @@ from .serializers import (
 )
 
 class DepartmentViewSet(viewsets.ModelViewSet):
-    queryset = Department.objects.all()
+    
     serializer_class = DepartmentSerializer
     permission_classes = [IsAuthenticated]
+    def get_queryset(self):
+        return Department.objects.filter(organisation=self.request.user.current_organisation)       
     
+    
+    def departments(self, request, pk=None):
+        """Get departments for the user's current organisation""" 
+        user = request.user
+        if not user.is_authenticated:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        organisation = user.current_organisation
+        if not organisation:
+            return Response({'error': 'User does not belong to any organisation'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        departments = Department.objects.filter(organisation=organisation)
+        serializer = self.get_serializer(departments, many=True)
+        return Response(serializer.data)
     @action(detail=True, methods=['get'])
     def teams(self, request, pk=None):
         """Get all teams in a department"""

@@ -32,6 +32,11 @@ class HasActiveSubscription(permissions.BasePermission):
 class IsOrganisationOwner(permissions.BasePermission):
     # check karte hai ki agar user organisation ka owner toh nhi
 
+    def has_permission(self, request, view):
+        user: CustomUser = cast(CustomUser, request.user)
+        organisation = getattr(user, 'current_organisation', None)
+        return bool(user and user.is_authenticated and organisation and organisation.owner_id == user.id)
+
     def has_object_permission(self, request, view, obj):
         org = obj if hasattr(obj, 'owner') else obj.organization
         user: CustomUser = cast(CustomUser, request.user)

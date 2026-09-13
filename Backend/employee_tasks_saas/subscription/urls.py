@@ -14,6 +14,17 @@ router.register(r'usage', UsageTrackingViewSet, basename='usage')
 
 
 urlpatterns = [
+    path(
+        'subscriptions/current/',
+        SubscriptionViewSet.as_view({'get': 'current'}),
+        name='subscription-current-explicit',
+    ),
+    path(
+        'subscriptions/current',
+        SubscriptionViewSet.as_view({'get': 'current'}),
+        name='subscription-current-no-slash',
+    ),
     path('', include(router.urls)),
     path('webhooks/razorpay/', RazorpayWebhookView.as_view(), name='razorpay-webhook'),
+    path('webhooks/razorpay', RazorpayWebhookView.as_view(), name='razorpay-webhook-no-slash'),
 ]

@@ -12,6 +12,7 @@ import TaskDetail from "./pages/tasks/TaskDetail";
 import { isAuthenticated } from "./utils/auth";
 import DepartmentsList from "./pages/departments/DepartmentsList";
 import ProjectsList from "./pages/projects/ProjectsList";
+import { Subscription } from "./pages/subscriptions/Subscription";
 
 function ProtectedRoute({ children }) {
   return isAuthenticated() ? children : <Navigate to="/login" />;
@@ -124,6 +125,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ProjectsList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path ="/subscriptions"
+            element= {
+              <ProtectedRoute>
+                <Subscription/>
               </ProtectedRoute>
             }
           />

@@ -10,7 +10,7 @@ function Register() {
         password2: '',
         first_name: '',
         last_name: '',
-        role: 'employee',
+        organisation_name: ''
     });
     const [avatar, setAvatar] = useState(null); // ✅ Separate state for avatar file
     const [avatarPreview, setAvatarPreview] = useState(null); // ✅ Preview image
@@ -88,7 +88,7 @@ function Register() {
             submitData.append('password2', formData.password2);
             submitData.append('first_name', formData.first_name);
             submitData.append('last_name', formData.last_name);
-            submitData.append('role', formData.role);
+            submitData.append('organisation_name', formData.organisation_name);
             
             // ✅ Add avatar if selected
             if (avatar) {
@@ -275,18 +275,18 @@ function Register() {
 
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Role
+                            Organisation Name <span className="text-red-500">*</span>
                         </label>
-                        <select
-                            name="role"
-                            value={formData.role}
+                        <input
+                            type="text"
+                            name="organisation_name"
+                            value={formData.organisation_name}
                             onChange={handleChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition bg-white"
-                        >
-                            <option value="employee">Employee</option>
-                            <option value="manager">Manager</option>
-                            <option value="admin">Admin</option>
-                        </select>
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                            placeholder="Your organisation name"
+                            required
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Your account will be created as the organisation owner.</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

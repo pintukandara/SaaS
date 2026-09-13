@@ -272,6 +272,30 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     serializer_class = SubscriptionSerializer
     permission_classes = [IsAuthenticated]
 
+    def create(self, request, *args, **kwargs):
+        return Response(
+            {"error": "Subscriptions can only be created through the upgrade endpoint"},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def update(self, request, *args, **kwargs):
+        return Response(
+            {"error": "Subscriptions cannot be updated directly"},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def partial_update(self, request, *args, **kwargs):
+        return Response(
+            {"error": "Subscriptions cannot be updated directly"},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        return Response(
+            {"error": "Subscriptions cannot be deleted directly"},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
     def get_queryset(self):
         user = self.request.user
         if user.current_organisation:
@@ -368,7 +392,6 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
                 },
             }
         )
-        print(razorpay_subscription)
         new_sub = Subscription.objects.create(
             organisation=org,
             plan=new_plan,

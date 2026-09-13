@@ -12,7 +12,7 @@ class UserSerializer(serializers.ModelSerializer):
     avatar_url = serializers.SerializerMethodField()
     full_name = serializers.SerializerMethodField()
 
-    class Meta(serializers.ModelSerializer.Meta):
+    class Meta:
         model = CustomUser  # type: ignore[assignment]
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name',
@@ -39,7 +39,7 @@ class UserListSerializer(serializers.ModelSerializer):
     """Simplified serializer for lists"""
     full_name = serializers.SerializerMethodField()
 
-    class Meta(serializers.ModelSerializer.Meta):
+    class Meta:
         model = CustomUser  # type: ignore[assignment]
         fields = ['id', 'username', 'first_name', 'last_name', 'full_name', 'email', 'role']
 
@@ -53,7 +53,7 @@ class RegisterSerializer(serializers.ModelSerializer):
                                       label='Confirm Password')
     organisation_name = serializers.CharField(write_only=True, required=True)
 
-    class Meta(serializers.ModelSerializer.Meta):
+    class Meta:
         model = CustomUser  # type: ignore[assignment]
         fields = ['username', 'email', 'password', 'password2', 'first_name', 'last_name', 'organisation_name']
 
@@ -117,7 +117,7 @@ class AcceptInvitationSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'},)
     token = serializers.CharField(write_only=True, required=True)
 
-    class Meta(serializers.ModelSerializer.Meta):
+    class Meta:
         model = CustomUser  # type: ignore[assignment]
         fields = ['username', 'password', 'password2', 'first_name', 'last_name','token']
 

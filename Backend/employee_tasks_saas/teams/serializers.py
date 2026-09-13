@@ -9,7 +9,7 @@ class DepartmentSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Department
-        fields = ['id', 'name', 'description', 'team_count', 'employee_count', 'created_at']
+        fields = ['id', 'name', 'description', 'team_count', 'employee_count', 'created_at','organisation']
         read_only_fields = ['id', 'created_at']
     
     def get_team_count(self, obj):

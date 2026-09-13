@@ -137,6 +137,7 @@ class Organisation(models.Model):
 class Subscription(models.Model):
         STATUS_CHOICES = [
         ('trial', 'Trial'),
+        ('pending', 'Pending'),
         ('active', 'Active'),
         ('past_due', 'Past Due'),
         ('cancelled', 'Cancelled'),

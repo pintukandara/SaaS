@@ -9,6 +9,7 @@ from razorpay.utility import Utility
 from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
+from django.db import transaction
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 
@@ -30,36 +31,39 @@ class RazorpayWebhookView(APIView):
     def post(self, request):
         raw_body = request.body
         signature = request.headers.get("X-Razorpay-Signature", "")
-        print("EVENT:", request.headers.get('X-Razorpay-Event-Id'))
-        print("SIGNATURE:", request.headers.get('X-Razorpay-Signature'))
-        print(json.dumps(json.loads(request.body), indent=2))
-        # return Response({'status': 'received'}, status=status.HTTP_200_OK)
+
+        if not signature:
+            return Response({"error": "Missing signature"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             Utility().verify_webhook_signature(
                 raw_body.decode("utf-8"), signature, settings.RAZORPAY_WEBHOOK_SECRET
             )
-        except SignatureVerificationError:
+            payload = json.loads(raw_body)
+        except (SignatureVerificationError, UnicodeDecodeError, json.JSONDecodeError):
             return Response(
-                {"error": "Invalid Signature", "status": status.HTTP_400_BAD_REQUEST},
+                {"error": "Invalid webhook payload or signature"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        payload = json.loads(raw_body)
         event = payload.get("event")
         event_id = request.headers.get("X-Razorpay-Event-Id")
 
         # Idempotency check - prevent duplicate event processing
         if event_id and Payment.objects.filter(razorpay_event_id=event_id).exists():
             return Response({"status": "already_processed"}, status=status.HTTP_200_OK)
-        if event == "subscription.activated":
-            self._handle_activated(payload, event_id)
-        elif event == "subscription.charged":
-            self._handle_charged(payload, event_id)
-        elif event == "payment.failed":
-            self._handle_payment_failed(payload, event_id)
-        elif event == "subscription.cancelled":
-            self._handle_cancelled(payload)
+        try:
+            with transaction.atomic():
+                if event == "subscription.activated":
+                    self._handle_activated(payload, event_id)
+                elif event == "subscription.charged":
+                    self._handle_charged(payload, event_id)
+                elif event == "payment.failed":
+                    self._handle_payment_failed(payload, event_id)
+                elif event == "subscription.cancelled":
+                    self._handle_cancelled(payload)
+        except (KeyError, TypeError, ValueError):
+            return Response({"error": "Malformed webhook payload"}, status=status.HTTP_400_BAD_REQUEST)
         # else: event we don't care about — still return 200 so Razorpay stops retrying
 
         return Response({"status": "ok"}, status=status.HTTP_200_OK)
