@@ -10,12 +10,14 @@ class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
         fields = ['id', 'name', 'description', 'team_count', 'employee_count', 'created_at','organisation']
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ['id', 'created_at','organisation']
     
     def get_team_count(self, obj):
+        print(obj)
         return obj.teams.count()
     
     def get_employee_count(self, obj):
+        print(obj)
         return obj.employees.count()
 
 

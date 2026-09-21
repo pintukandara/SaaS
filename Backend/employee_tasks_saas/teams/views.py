@@ -12,14 +12,34 @@ from .serializers import (
     TeamMemberSerializer
 )
 
+from rest_framework.exceptions import ValidationError
+
 class DepartmentViewSet(viewsets.ModelViewSet):
     
     serializer_class = DepartmentSerializer
     permission_classes = [IsAuthenticated]
+    
     def get_queryset(self):
         return Department.objects.filter(organisation=self.request.user.current_organisation)       
     
     
+    def perform_create(self,serializer):
+        
+        organisation = self.request.user.current_organisation
+
+        if organisation is None:
+            raise ValidationError(
+                {
+                    "organisation":'Select or create organisation first.'
+                }
+            )
+        serializer.save(organisation = organisation)
+        
+
+
+        
+
+        
     def departments(self, request, pk=None):
         """Get departments for the user's current organisation""" 
         user = request.user

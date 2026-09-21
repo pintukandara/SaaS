@@ -60,7 +60,8 @@ function ProjectsList() {
     const fetchTeams = async () => {
         try {
             const response = await api.get('/teams/');
-            setTeams(response.data);
+            setTeams(response.data.results ?? response.data);
+            console.log("teams fetched successfully..." + response.data);
         } catch (error) {
             console.error('Failed to fetch teams:', error);
         }

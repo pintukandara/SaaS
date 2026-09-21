@@ -61,9 +61,8 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
         user = self.request.user
 
         if user.role == 'admin':
-            # Admin sees all users
-            return CustomUser.objects.all().order_by('first_name', 'last_name')
-
+            # Admin sees all users of his organisation
+            return CustomUser.objects.filter(current_organisation = user.current_organisation)
         elif user.role == 'manager':
             # Manager sees users in their teams
             from teams.models import TeamMember
