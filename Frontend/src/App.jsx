@@ -13,6 +13,7 @@ import { isAuthenticated } from "./utils/auth";
 import DepartmentsList from "./pages/departments/DepartmentsList";
 import ProjectsList from "./pages/projects/ProjectsList";
 import { Subscription } from "./pages/subscriptions/Subscription";
+import { InviteEmployee } from "./pages/InviteEmployee";
 
 function ProtectedRoute({ children }) {
   return isAuthenticated() ? children : <Navigate to="/login" />;
@@ -133,6 +134,14 @@ function App() {
             element= {
               <ProtectedRoute>
                 <Subscription/>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/invite-member"
+            element={
+              <ProtectedRoute>
+                <InviteEmployee />
               </ProtectedRoute>
             }
           />

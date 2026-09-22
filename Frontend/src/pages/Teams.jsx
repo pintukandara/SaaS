@@ -44,7 +44,7 @@ function Teams() {
                 fetchTeams(),
                 fetchDepartments(),
                 fetchManagers(),
-                fetchEmployees(),
+                
             ]);
         } catch (error) {
             console.error('Failed to fetch initial data:', error);
@@ -57,7 +57,7 @@ function Teams() {
         try {
             const response = await api.get('/teams/');
             setTeams(response.data.results);
-            console.log('Fetched teams:', response.data);
+            
         } catch (error) {
             console.error('Failed to fetch teams:', error);
         }
@@ -66,7 +66,7 @@ function Teams() {
     const fetchDepartments = async () => {
         try {
             const response = await api.get('/departments/');
-            console.log('Fetched departments:', response.data);
+            
             setDepartments(response.data.results);
         } catch (error) {
             console.error('Failed to fetch departments:', error);
@@ -77,6 +77,8 @@ function Teams() {
         try {
             const response = await api.get('/auth/users/');
             console.log('Fetched users for managers:', response.data);
+            setEmployees(response.data.results)
+            
             // Filter only managers and admins
             const managerUsers = response.data.results.filter(u => 
                 u.role === 'manager' || u.role === 'admin'
@@ -87,14 +89,7 @@ function Teams() {
         }
     };
 
-    const fetchEmployees = async () => {
-        try {
-            const response = await api.get('/auth/users/');
-            setEmployees(response.data);
-        } catch (error) {
-            console.error('Failed to fetch employees:', error);
-        }
-    };
+
 
     const handleInputChange = (e) => {
         setFormData({
@@ -225,6 +220,7 @@ function Teams() {
     };
 
     const canManageTeams = () => {
+        console.log('Role of the user:' + user.role)
         return user?.role === 'admin' || user?.role === 'manager';
     };
 

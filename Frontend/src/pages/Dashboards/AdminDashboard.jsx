@@ -34,16 +34,19 @@ export function AdminDashboard() {
                 departmentsRes,
                 teamsRes,
                 tasksRes,
-                projectsRes
+                projectsRes,
+                employeeRes
             ] = await Promise.all([
                 api.get('/departments/'),
                 api.get('/teams/'),
                 api.get('/tasks/'),
-                api.get('/projects/').catch(() => ({ data: [] })) // Handle if projects endpoint doesn't exist yet
+                api.get('/projects/').catch(() => ({ data: [] })) ,// Handle if projects endpoint doesn't exist yet
+                api.get('auth/users/')
+
             ]);
 
             const allDepartments = departmentsRes.data;
-            console.log("Fetched departments:", allDepartments.results); // Log top 4 departments
+            console.log("Fetched departments:", allDepartments.results.length); // Log top 4 departments
             const allTeams = teamsRes.data;
             console.log("Fetched teams:", allTeams);
             const allTasks = tasksRes.data;
@@ -56,8 +59,9 @@ export function AdminDashboard() {
             setTopTeams(allTeams.results.slice(0, 5)); // Show top 5 teams
 
             // Calculate total employees (you might need to create this endpoint)
-            const totalEmployees = allTeams.results.reduce((acc, team) => acc + (team.member_count || 0), 0);
-            console.log("Calculated total employees:", totalEmployees);
+            const totalEmployees = employeeRes.data.results.length
+            console.log("Calculated total employees:", employeeRes.data.results.length);
+            
 
             // Calculate task statistics
             const activeTasks = allTasks.results.filter(task => task.status !== 'done').length;
@@ -69,10 +73,10 @@ export function AdminDashboard() {
 
             setStats({
                 totalEmployees: totalEmployees,
-                totalDepartments: allDepartments.length,
-                totalTeams: allTeams.length,
-                totalProjects: allProjects.length,
-                totalTasks: allTasks.length,
+                totalDepartments: allDepartments.results.length,
+                totalTeams: allTeams.results.length,
+                totalProjects: allProjects.results.length,
+                totalTasks: allTasks.results.length,
                 activeTasks: activeTasks,
                 completedTasks: completedTasks,
                 overdueTasks: overdueTasks,
@@ -141,7 +145,7 @@ export function AdminDashboard() {
                                 <span className="text-sm font-semibold uppercase tracking-wide">System Administrator</span>
                             </div>
                             <h2 className="text-3xl sm:text-4xl font-bold mb-2">
-                                Admin Dashboard 👑
+                                Admin Dashboard 
                             </h2>
                             <p className="text-blue-100 text-lg">
                                 Complete system overview and management
@@ -305,7 +309,7 @@ export function AdminDashboard() {
                         </div>
                     </Link>
 
-                    <Link to="/users" className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition group">
+                    <Link to="/invite-member" className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition group">
                         <div className="flex items-center space-x-4">
                             <div className="bg-green-100 p-3 rounded-lg group-hover:bg-green-200 transition">
                                 <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
