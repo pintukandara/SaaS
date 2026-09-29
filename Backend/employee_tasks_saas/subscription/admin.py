@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     SubscriptionPlan, Organisation, Subscription,
-    OrganisationMember, UsageTracking, Invoice
+    OrganisationMember, UsageTracking, Invoice,Invitation
 )
 
 
@@ -43,3 +43,8 @@ class InvoiceAdmin(admin.ModelAdmin):
     list_display = ['invoice_number', 'organisation', 'total_amount', 'status', 'due_date']
     list_filter = ['status', 'issue_date']
     search_fields = ['invoice_number', 'organisation__name']
+
+@admin.register(Invitation)
+class InvitationAdmin(admin.ModelAdmin):
+    list_display = ['organisation','email','role','token']
+    

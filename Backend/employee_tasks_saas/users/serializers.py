@@ -2,7 +2,13 @@ from datetime import datetime
 
 from rest_framework import serializers
 from .models import CustomUser
-from subscription.models import Organisation, OrganisationMember, Subscription, SubscriptionPlan,Invitation
+from subscription.models import (
+    Organisation,
+    OrganisationMember,
+    Subscription,
+    SubscriptionPlan,
+    Invitation,
+)
 from django.utils.text import slugify
 from datetime import timedelta
 from django.utils import timezone
@@ -15,162 +21,201 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser  # type: ignore[assignment]
         fields = [
-            'id', 'username', 'email', 'first_name', 'last_name',
-            'full_name', 'role', 'phone', 'department', 'avatar',
-            'avatar_url'
+            "id",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "full_name",
+            "role",
+            "phone",
+            "department",
+            "avatar",
+            "avatar_url",
         ]
-        read_only_fields = ['id']
+        read_only_fields = ["id"]
 
     def get_avatar_url(self, obj):
         if obj.avatar:
             print(self.context)
-            request = self.context.get('request')
+            request = self.context.get("request")
             if request:
                 print(request)
                 return request.build_absolute_uri(obj.avatar.url)
             return obj.avatar.url
         return None
 
-    def get_full_name(self, obj)->str:
+    def get_full_name(self, obj) -> str:
         return f"{obj.first_name} {obj.last_name}".strip() or obj.username
 
 
 class UserListSerializer(serializers.ModelSerializer):
     """Simplified serializer for lists"""
+
     full_name = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser  # type: ignore[assignment]
-        fields = ['id', 'username', 'first_name', 'last_name', 'full_name', 'email', 'role']
+        fields = [
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "full_name",
+            "email",
+            "role",
+        ]
 
     def get_full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}".strip() or obj.username
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
-    password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'},
-                                      label='Confirm Password')
+    password = serializers.CharField(
+        write_only=True, required=True, style={"input_type": "password"}
+    )
+    password2 = serializers.CharField(
+        write_only=True,
+        required=True,
+        style={"input_type": "password"},
+        label="Confirm Password",
+    )
     organisation_name = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = CustomUser  # type: ignore[assignment]
-        fields = ['username', 'email', 'password', 'password2', 'first_name', 'last_name', 'organisation_name']
+        fields = [
+            "username",
+            "email",
+            "password",
+            "password2",
+            "first_name",
+            "last_name",
+            "organisation_name",
+        ]
 
     def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
+        if attrs["password"] != attrs["password2"]:
             raise serializers.ValidationError({"password": "Passwords don't match."})
-        if CustomUser.objects.filter(email=attrs['email']).exists():
+        if CustomUser.objects.filter(email=attrs["email"]).exists():
             raise serializers.ValidationError({"email": "Email already registered."})
-        if CustomUser.objects.filter(username=attrs['username']).exists():
-            raise serializers.ValidationError({"username":"this username already exists"})
-        if Organisation.objects.filter(name=attrs['organisation_name']).exists():
-            raise serializers.ValidationError({"organisation_name": "This Organisation already exists Please login with your credentials."})
+        if CustomUser.objects.filter(username=attrs["username"]).exists():
+            raise serializers.ValidationError(
+                {"username": "this username already exists"}
+            )
+        if Organisation.objects.filter(name=attrs["organisation_name"]).exists():
+            raise serializers.ValidationError(
+                {
+                    "organisation_name": "This Organisation already exists Please login with your credentials."
+                }
+            )
         return attrs
 
     def create(self, validated_data):
-        validated_data.pop('password2')
-        org_name = validated_data.pop('organisation_name')
-        
+        validated_data.pop("password2")
+        org_name = validated_data.pop("organisation_name")
 
         user = CustomUser.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=validated_data['password'],
-            first_name=validated_data.get('first_name', ''),
-            last_name=validated_data.get('last_name', ''),
-            role = "admin"
+            username=validated_data["username"],
+            email=validated_data["email"],
+            password=validated_data["password"],
+            first_name=validated_data.get("first_name", ""),
+            last_name=validated_data.get("last_name", ""),
+            role="admin",
         )
 
         base_slug = slugify(org_name)
         slug = base_slug
-        
 
         org = Organisation.objects.create(
-            name=org_name,
-            slug= slug,
-            owner=user,
-            email = user.email
+            name=org_name, slug=slug, owner=user, email=user.email
         )
-       
+
         user.current_organisation = org
         user.save()
 
-        OrganisationMember.objects.create(organisation=org,user = user,role = "admin")
+        OrganisationMember.objects.create(organisation=org, user=user, role="admin")
         free_plan = SubscriptionPlan.objects.filter(name="free").first()
 
         if free_plan:
             new_sub = Subscription.objects.create(
-                            organisation=org,
-                            plan=free_plan,
-                            status="active",
-                            start_date=timezone.now(),
-                            end_date=timezone.now() + timedelta(days=30),  # Monthly
-                            is_trial=True,
-                        )
+                organisation=org,
+                plan=free_plan,
+                status="active",
+                start_date=timezone.now(),
+                end_date=timezone.now() + timedelta(days=30),  # Monthly
+                is_trial=True,
+            )
 
         return user
 
+
 class AcceptInvitationSerializer(serializers.ModelSerializer):
     # Role and organisation will be set in the view based on the invitation
-    password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
-    password2 = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'},)
+    password = serializers.CharField(
+        write_only=True, required=True, style={"input_type": "password"}
+    )
+    password2 = serializers.CharField(
+        write_only=True,
+        required=True,
+        style={"input_type": "password"},
+    )
     token = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = CustomUser  # type: ignore[assignment]
-        fields = ['username', 'password', 'password2', 'first_name', 'last_name','token']
+        fields = [
+            "username",
+            "password",
+            "password2",
+            "first_name",
+            "last_name",
+            "token",
+        ]
 
     def validate(self, attrs):
-                if attrs['password'] != attrs['password2']:
-                    raise serializers.ValidationError({"password": "Passwords don't match."})
-                
-                try:
-                    invitation = Invitation.objects.get(token = attrs['token'])
-                except Invitation.DoesNotExist:
-                    raise serializers.ValidationError({"token": "Invalid invitation token."})
-                
-                if not invitation.is_valid():
-                    raise serializers.ValidationError({"token": "Invitation token has expired or is invalid."})
-                
-                attrs['invitation'] = invitation
-                return attrs
-        
+        if attrs["password"] != attrs["password2"]:
+            raise serializers.ValidationError({"password": "Passwords don't match."})
+
+        try:
+            invitation = Invitation.objects.get(token=attrs["token"])
+        except Invitation.DoesNotExist:
+            raise serializers.ValidationError({"token": "Invalid invitation token."})
+
+        if not invitation.is_valid():
+            raise serializers.ValidationError(
+                {"token": "Invitation token has expired or is invalid."}
+            )
+
+        attrs["invitation"] = invitation
+        return attrs
+
     def create(self, validated_data):
-            validated_data.pop('password2')
-            invitation = validated_data.pop('invitation')
-            token = validated_data.pop('token')
+        validated_data.pop("password2")
+        invitation = validated_data.pop("invitation")
+        token = validated_data.pop("token")
 
-            # Role, Organisation, and email will come from the invitation
+        # Role, Organisation, and email will come from the invitation
 
-            user = CustomUser.objects.create_user(
-                username = validated_data['username'],
-                email = invitation.email,
-                password = validated_data['password'],
-                first_name = validated_data.get('first_name', ''),
-                last_name = validated_data.get('last_name', ''),
-                role = invitation.role,
-                
-            )
-            user.current_organisation = invitation.organisation
-            user.save()
+        user = CustomUser.objects.create_user(
+            username=validated_data["username"],
+            email=invitation.email,
+            password=validated_data["password"],
+            first_name=validated_data.get("first_name", ""),
+            last_name=validated_data.get("last_name", ""),
+            role=invitation.role,
+        )
 
+        user.current_organisation = invitation.organisation
+        user.save()
 
-            OrganisationMember.objects.create(
-                organisation = invitation.organisation,
-                user = user,
-                role = invitation.role,
-                invited_by = invitation.invited_by
+        OrganisationMember.objects.create(
+            organisation=invitation.organisation,
+            user=user,
+            role=invitation.role,
+            invited_by=invitation.invited_by,
+        )
+        invitation.status = "accepted"
+        invitation.save()
 
-            )
-            invitation.status = 'accepted'
-            invitation.save()
-
-            return user
-        
-
-            
-
-
-
-
+        return user
