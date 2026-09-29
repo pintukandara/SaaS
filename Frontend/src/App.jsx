@@ -14,6 +14,7 @@ import DepartmentsList from "./pages/departments/DepartmentsList";
 import ProjectsList from "./pages/projects/ProjectsList";
 import { Subscription } from "./pages/subscriptions/Subscription";
 import { InviteEmployee } from "./pages/InviteEmployee";
+import { AcceptInvite } from "./pages/AcceptInvite";
 
 function ProtectedRoute({ children }) {
   return isAuthenticated() ? children : <Navigate to="/login" />;
@@ -142,6 +143,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <InviteEmployee />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/accept-invite/:token"
+            element={
+              <ProtectedRoute>
+                <AcceptInvite />
               </ProtectedRoute>
             }
           />

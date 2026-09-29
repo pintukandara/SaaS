@@ -8,7 +8,7 @@ function Login() {
         username: '',
         password: '',
     });
-    const [user,setUser] = useState(null);
+    // const [user,setUser] = useState(null);
 
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -20,9 +20,6 @@ function Login() {
             [e.target.name]: e.target.value,
         });
     };
-
-
-
 
     const handleSubmit = async (e) => {
         e.preventDefault();
