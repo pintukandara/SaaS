@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.conf import settings
 
 
@@ -24,6 +24,13 @@ class Task(models.Model):
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
 
     # Relationships
+    organisation = models.ForeignKey(
+        'subscription.Organisation',
+        on_delete=models.CASCADE,
+        related_name='tasks',
+        null=True,
+        blank=True,
+    )
     project = models.ForeignKey(
         'projects.Project',
         on_delete=models.CASCADE,
@@ -65,6 +72,18 @@ class Task(models.Model):
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        if self._state.adding:
+            if not self.organisation_id:
+                self.organisation_id = (
+                    self.project.organisation_id if self.project_id else None
+                ) or self.created_by.current_organisation_id
+            # Keep post-save usage accounting in the same transaction as creation,
+            # including normal ORM writes outside the API.
+            with transaction.atomic(using=kwargs.get('using') or self._state.db):
+                return super().save(*args, **kwargs)
+        return super().save(*args, **kwargs)
 
     def is_overdue(self):
         """Check if task is overdue"""

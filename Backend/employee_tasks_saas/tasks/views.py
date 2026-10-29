@@ -8,11 +8,12 @@ from django.db.models import Q
 from .models import Task, TaskComment
 from .serializers import TaskSerializer, TaskDetailSerializer, TaskCommentSerializer
 from .permissions import TaskPermission
-from subscription.permissions import HasActiveSubscription, WithInTaskLimit
+from subscription.permissions import HasActiveSubscription
+from subscription.services import save_with_usage_limit
 
 
 class TaskViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated, TaskPermission, HasActiveSubscription, WithInTaskLimit]
+    permission_classes = [IsAuthenticated, TaskPermission, HasActiveSubscription]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['status', 'priority', 'assigned_to', 'project']
     search_fields = ['title', 'description', 'tags']
@@ -23,17 +24,18 @@ class TaskViewSet(viewsets.ModelViewSet):
         Filter tasks based on user role
         """
         user = self.request.user
+        tasks = Task.objects.filter(organisation=user.current_organisation)
 
         if user.role == 'admin':
             # Admin sees all tasks
-            return Task.objects.all()
+            return tasks
 
         elif user.role == 'manager':
             # Manager sees:
             # 1. Tasks they created
             # 2. Tasks in projects they own
             # 3. Tasks assigned to their team members
-            return Task.objects.filter(
+            return tasks.filter(
                 Q(created_by=user) |
                 Q(project__owner=user) |
                 Q(assigned_to__team_memberships__team__manager=user)
@@ -41,7 +43,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         else:  # employee
             # Employee sees only tasks assigned to them
-            return Task.objects.filter(assigned_to=user)
+            return tasks.filter(assigned_to=user)
 
     def get_serializer_class(self):
         if self.action == 'retrieve':
@@ -58,7 +60,9 @@ class TaskViewSet(viewsets.ModelViewSet):
         if user.role not in ['admin', 'manager']:
             raise PermissionDenied("Only admins and managers can create tasks")
 
-        serializer.save(created_by=user)
+        save_with_usage_limit(
+            serializer, user.current_organisation, 'tasks_created', created_by=user,
+        )
 
     def perform_update(self, serializer):
         """
@@ -110,7 +114,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def my_tasks(self, request):
         """Get tasks assigned to current user"""
-        tasks = Task.objects.filter(assigned_to=request.user)
+        tasks = self.get_queryset().filter(assigned_to=request.user)
         serializer = self.get_serializer(tasks, many=True)
         return Response(serializer.data)
 

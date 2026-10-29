@@ -102,7 +102,9 @@ class VerifyInvitationView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, token):
+        print("hello world")
         try:
+            print(request)
             invitation = Invitation.objects.get(token= token)
         except Invitation.DoesNotExist:
             return Response({"error": "Invalid invitation token."}, status=status.HTTP_400_BAD_REQUEST)

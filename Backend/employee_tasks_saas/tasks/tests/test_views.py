@@ -9,13 +9,17 @@ Covers:
     GET      /api/tasks/my_tasks/
     GET      /api/tasks/statistics/
 """
+from datetime import timedelta
+
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from tasks.models import Task, TaskComment
 from teams.models import Department, Team, TeamMember
 from users.models import CustomUser
+from subscription.models import Organisation, OrganisationMember, Subscription, SubscriptionPlan
 
 
 class TaskViewSetBaseTestCase(APITestCase):
@@ -39,6 +43,20 @@ class TaskViewSetBaseTestCase(APITestCase):
             username='other', email='other@example.com', password='pass12345',
             role='employee',
         )
+        self.org = Organisation.objects.create(
+            name='Task team', slug='task-team', owner=self.admin, email='tasks@example.com',
+        )
+        for user in (self.admin, self.manager, self.employee, self.other_employee):
+            user.current_organisation = self.org
+            user.save()
+            OrganisationMember.objects.create(organisation=self.org, user=user)
+        plan = SubscriptionPlan.objects.create(name='free', display_name='Free', price=0)
+        Subscription.objects.create(
+            organisation=self.org, plan=plan, status='active',
+            start_date=timezone.now(), end_date=timezone.now() + timedelta(days=30),
+        )
+        self.department.organisation = self.org
+        self.department.save()
         self.team = Team.objects.create(
             name='Backend', department=self.department, manager=self.manager
         )

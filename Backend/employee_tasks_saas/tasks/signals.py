@@ -8,9 +8,9 @@ from .models import Task
 
 @receiver(post_save, sender=Task)
 def track_task_creation(sender, instance, created, **kwargs):
-    if not created:
+    if not created or kwargs.get('raw'):
         return
 
-    organisation = instance.created_by.current_organisation
+    organisation = instance.organisation
     if organisation:
-        track_usage(organisation, 'tasks_created')
+        track_usage(organisation, 'tasks_created', at=instance.created_at)

@@ -1,9 +1,6 @@
 from rest_framework import permissions
 from users.models import CustomUser
-from django.utils import timezone
 from typing import cast
-from projects.models import Project
-from .models import UsageTracking
 
 class HasActiveSubscription(permissions.BasePermission):
     # pehle Checck krunga ki company ka koi subscription plan hai ya ni
@@ -111,60 +108,3 @@ class WithInUsageLimits(permissions.BasePermission):
             return False
 
         return True
-
-
-class WithInProjectLimit(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-
-        if getattr(view, 'action', None) != 'create':
-            return True
-
-        user: CustomUser = cast(CustomUser, request.user)
-        org = user.current_organisation
-        if not org:
-            return False
-        sub = org.active_subscription
-        if not sub:
-            return False
-
-        plan = sub.plan
-
-        project_count = Project.objects.filter(owner__current_organisation=org).count()
-        if project_count >= plan.max_projects:
-            self.message = f"Project limit reached ({plan.max_projects} projects max)"
-            return False
-        return True
-
-
-class WithInTaskLimit(permissions.BasePermission):
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            return False
-
-        if getattr(view, 'action', None) != 'create':
-            return True
-
-        user: CustomUser = cast(CustomUser, request.user)
-        org = user.current_organisation
-        if not org:
-            return False
-        sub = org.active_subscription
-        if not sub:
-            return False
-
-        plan = sub.plan
-
-        now = timezone.now()
-        usage = UsageTracking.objects.filter(
-            organisation=org,
-            year=now.year,
-            month=now.month,
-        ).first()
-        task_count = usage.tasks_created if usage else 0
-        if task_count >= plan.max_tasks_per_month:
-            self.message = f"Task limit reached {plan.max_tasks_per_month} tasks per month max"
-            return False
-        return True
-        

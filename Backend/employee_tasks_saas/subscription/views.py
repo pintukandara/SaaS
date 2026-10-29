@@ -22,6 +22,7 @@ from .permissions import (
     WithInUsageLimits,
 )
 from .tasks import send_invitation_email
+from .services import get_usage_record
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
@@ -33,6 +34,7 @@ from rest_framework import status
 from django.utils import timezone
 from django.db.models import Q
 from datetime import timedelta
+import secrets
 import razorpay
 from users.models import CustomUser
 
@@ -127,6 +129,8 @@ class OrganisationViewSet(viewsets.ModelViewSet):
                 "role": role,
                 "invited_by": request.user,
                 "status": "pending",
+                "token": secrets.token_urlsafe(32),
+                "expires_at": timezone.now() + timedelta(days=7),
             },
         )
 
@@ -431,10 +435,7 @@ class UsageTrackingViewSet(viewsets.ReadOnlyModelViewSet):
                 {"error": "No organisation"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        now = timezone.now()
-        usage, _ = UsageTracking.objects.get_or_create(
-            organisation=org, year=now.year, month=now.month
-        )
+        usage = get_usage_record(org)
         # Get limits from plan
         sub = org.active_subscription
         limits = (
@@ -451,6 +452,16 @@ class UsageTrackingViewSet(viewsets.ReadOnlyModelViewSet):
         data = UsageTrackingSerializer(usage).data
         data["limits"] = limits
         data["current_users"] = org.member_count
+        data["current_projects"] = org.projects.count()
+        data["remaining_tasks"] = max(0, sub.plan.max_tasks_per_month - usage.tasks_created) if sub else 0
+        data["remaining_projects"] = max(0, sub.plan.max_projects - data["current_projects"]) if sub else 0
+        data["period_timezone"] = timezone.get_default_timezone_name()
+        # Use the same period as the usage row, including a request at month end.
+        year, month = usage.year, usage.month
+        next_year, next_month = (year + 1, 1) if month == 12 else (year, month + 1)
+        data["resets_at"] = timezone.datetime(
+            next_year, next_month, 1, tzinfo=timezone.get_default_timezone(),
+        ).isoformat()
 
         return Response(data)
 

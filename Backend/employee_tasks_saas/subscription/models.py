@@ -124,7 +124,7 @@ class Organisation(models.Model):
     
     @property
     def member_count(self):
-        return self.member.count()
+        return self.member.filter(is_active=True).count()
 
     
 

@@ -1,4 +1,5 @@
-from subscription.permissions import HasActiveSubscription, WithInProjectLimit, WithInUsageLimits
+from subscription.permissions import HasActiveSubscription
+from subscription.services import save_with_usage_limit
 from .serializers import ProjectSerializer, ProjectDetailSerializer, ProjectMemberSerializer
 from rest_framework.permissions import IsAuthenticated
 from .models import Project, ProjectMember
@@ -13,7 +14,7 @@ from users.models import CustomUser
 from .permissions import ProjectPermission
 
 class ProjectViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated, ProjectPermission, HasActiveSubscription, WithInUsageLimits, WithInProjectLimit]
+    permission_classes = [IsAuthenticated, ProjectPermission, HasActiveSubscription]
     
     def get_queryset(self):
         user: CustomUser = cast(CustomUser, self.request.user)
@@ -46,7 +47,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("Only admins can create projects")
 
 
-        serializer.save(owner=user, organisation=user.current_organisation)
+        save_with_usage_limit(
+            serializer, user.current_organisation, 'projects_created', owner=user,
+        )
     
     @action(detail=True, methods=['post'])
     def add_member(self, request, pk=None):

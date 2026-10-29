@@ -7,13 +7,17 @@ Covers:
     POST     /api/projects/<pk>/add_member/
     DELETE   /api/projects/<pk>/remove_member/
 """
+from datetime import timedelta
+
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from projects.models import Project, ProjectMember
 from teams.models import Department, Team, TeamMember
 from users.models import CustomUser
+from subscription.models import Organisation, OrganisationMember, Subscription, SubscriptionPlan
 
 
 class ProjectViewSetBaseTestCase(APITestCase):
@@ -37,16 +41,30 @@ class ProjectViewSetBaseTestCase(APITestCase):
             username='outsider', email='outsider@example.com', password='pass12345',
             role='employee',
         )
+        self.org = Organisation.objects.create(
+            name='Project team', slug='project-team', owner=self.admin, email='projects@example.com',
+        )
+        for user in (self.admin, self.manager, self.employee, self.outsider):
+            user.current_organisation = self.org
+            user.save()
+            OrganisationMember.objects.create(organisation=self.org, user=user)
+        plan = SubscriptionPlan.objects.create(name='free', display_name='Free', price=0)
+        Subscription.objects.create(
+            organisation=self.org, plan=plan, status='active',
+            start_date=timezone.now(), end_date=timezone.now() + timedelta(days=30),
+        )
+        self.department.organisation = self.org
+        self.department.save()
         self.team = Team.objects.create(
             name='Backend', department=self.department, manager=self.manager
         )
         TeamMember.objects.create(team=self.team, user=self.employee)
 
         self.managers_project = Project.objects.create(
-            name="Manager's project", owner=self.manager, team=self.team
+            name="Manager's project", owner=self.manager, team=self.team, organisation=self.org,
         )
         self.unrelated_project = Project.objects.create(
-            name='Unrelated project', owner=self.admin
+            name='Unrelated project', owner=self.admin, organisation=self.org,
         )
 
 
@@ -61,12 +79,12 @@ class ProjectListTests(ProjectViewSetBaseTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['count'], Project.objects.count())
 
-    def test_manager_sees_owned_and_team_projects(self):
+    def test_manager_sees_projects_in_current_organisation(self):
         self.client.force_authenticate(self.manager)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         names = {p['name'] for p in response.data['results']}
-        self.assertEqual(names, {"Manager's project"})
+        self.assertEqual(names, {"Manager's project", 'Unrelated project'})
 
     def test_employee_sees_projects_via_team(self):
         self.client.force_authenticate(self.employee)
@@ -132,8 +150,8 @@ class ProjectRetrieveUpdateDeleteTests(ProjectViewSetBaseTestCase):
         self.client.force_authenticate(self.manager)
         url = reverse('project-detail', args=[self.unrelated_project.id])
         response = self.client.patch(url, {'status': 'active'})
-        # Not in manager's queryset at all -> 404, not 403
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # Visible in the workspace, but the manager cannot edit another owner's project.
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_admin_can_delete_project(self):
         self.client.force_authenticate(self.admin)
