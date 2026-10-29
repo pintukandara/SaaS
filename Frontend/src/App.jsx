@@ -148,11 +148,7 @@ function App() {
           />
           <Route
             path="/accept-invite/:token"
-            element={
-              <ProtectedRoute>
-                <AcceptInvite />
-              </ProtectedRoute>
-            }
+            element={<AcceptInvite />}
           />
 
           {/* Catch all */}
