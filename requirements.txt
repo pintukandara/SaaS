@@ -15,6 +15,7 @@ click-didyoumean==0.3.1
 click-plugins==1.1.1.2
 click-repl==0.3.0
 cryptography==43.0.0
+dj-database-url==3.1.2
 Django==6.0.2
 django-cors-headers==4.9.0
 django-extensions==4.1
@@ -50,6 +51,8 @@ pexpect==4.9.0
 pillow==11.3.0
 prompt_toolkit==3.0.52
 psutil==7.0.0
+psycopg==3.3.8
+psycopg-binary==3.3.8
 ptyprocess==0.7.0
 pycparser==3.0
 Pygments==2.18.0
@@ -83,3 +86,4 @@ urllib3==2.3.0
 vine==5.1.0
 wcwidth==0.6.0
 wheel==0.46.1
+whitenoise==6.12.0

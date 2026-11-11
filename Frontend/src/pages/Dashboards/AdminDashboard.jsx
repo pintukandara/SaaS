@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../../api/axios';
 import { useUser } from '../../context/UserContext';
 import { DashboardNav } from '../../components/Dashboard/DashboardNav';
+import UsageSummary from '../../components/Usage/UsageSummary';
 // import Dashboard from '../Dashboard';
 
 export function AdminDashboard() {
@@ -166,6 +167,8 @@ export function AdminDashboard() {
                         </div>
                     </div>
                 </div>
+
+                <UsageSummary />
 
                 {/* Main Stats Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

@@ -3,6 +3,9 @@ import {useState, useEffect} from 'react'
 import {useNavigate} from 'react-router-dom'
 import {useUser} from '../../context/UserContext'
 import api from '../../api/axios'
+import { useUsage } from '../../context/UsageContext';
+import UsageSummary from '../../components/Usage/UsageSummary';
+import DashboardNav from '../../components/Dashboard/DashboardNav';
 
 const RAZORPAY_SCRIPT_URL = 'https://checkout.razorpay.com/v1/checkout.js';
 
@@ -34,6 +37,7 @@ const delay = (milliseconds) => new Promise((resolve) => {
 export const Subscription = () => {
     const navigate = useNavigate();
     const {user} = useUser();
+    const {refreshUsage} = useUsage();
     const [subscription, setSubscription] = useState(null);
     const [error, setError] = useState(null);
     const [message, setMessage] = useState(null);
@@ -63,6 +67,7 @@ export const Subscription = () => {
                 if (response.data?.status === 'active') {
                     setActivePlanName(response.data.plan_name || planName);
                     setMessage('Payment confirmed. Your subscription is now active.');
+                    refreshUsage({force: true});
                     navigate('/dashboard');
                     return;
                 }
@@ -90,6 +95,7 @@ export const Subscription = () => {
                 setActivePlanName(response.data.subscription?.plan_name || plan.display_name);
                 setMessage(`${plan.display_name} plan activated successfully.`);
                 setCheckoutPlanId(null);
+                refreshUsage({force: true});
                 navigate('/dashboard');
                 return;
             }
@@ -144,8 +150,12 @@ export const Subscription = () => {
     };
 
   return (
+    <>
+        <DashboardNav />
         <main className="max-w-4xl mx-auto px-4 py-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-6">Subscription Plans</h1>
+
+            <UsageSummary detailed />
 
             {error && <p className="text-red-600">{error}</p>}
             {message && <p className="mb-4 text-green-700">{message}</p>}
@@ -199,5 +209,6 @@ export const Subscription = () => {
                 </ul>
             )}
         </main>
+    </>
   )
 }

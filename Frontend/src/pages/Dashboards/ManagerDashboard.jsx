@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../../api/axios';
 import { useUser } from '../../context/UserContext';
 import { DashboardNav } from '../../components/Dashboard/DashboardNav';
+import UsageSummary from '../../components/Usage/UsageSummary';
 
 export function ManagerDashboard() {
     const { user } = useUser();
@@ -17,7 +18,6 @@ export function ManagerDashboard() {
     });
     const [teams, setTeams] = useState([]);
     const [recentTasks, setRecentTasks] = useState([]);
-    const [teamMembers, setTeamMembers] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -121,6 +121,8 @@ export function ManagerDashboard() {
                         </div>
                     </div>
                 </div>
+
+                <UsageSummary />
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

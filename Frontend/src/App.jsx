@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { UserProvider } from "./context/UserContext";
+import { UsageProvider } from "./context/UsageProvider";
 import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -28,6 +29,7 @@ function App() {
   return (
     <BrowserRouter>
       <UserProvider>
+        <UsageProvider>
         <Routes>
           {/* Public Routes */}
           <Route
@@ -154,6 +156,7 @@ function App() {
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
+        </UsageProvider>
       </UserProvider>
     </BrowserRouter>
   );

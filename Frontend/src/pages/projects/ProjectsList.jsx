@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { useUser } from '../../context/UserContext';
 import DashboardNav from '../../components/Dashboard/DashboardNav';
+import { useUsage } from '../../context/UsageContext';
+import CreationAllowance from '../../components/Usage/CreationAllowance';
+import { useCreationBlocked } from '../../components/Usage/usageHelpers';
 
 function ProjectsList() {
     const { user } = useUser();
-    const navigate = useNavigate();
+    const { refreshUsage } = useUsage();
+    const creationBlocked = useCreationBlocked('projects');
 
     const [projects, setProjects] = useState([]);
     const [teams, setTeams] = useState([]);
@@ -27,6 +30,7 @@ function ProjectsList() {
 
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [saving, setSaving] = useState(false);
 
     useEffect(() => {
         fetchInitialData();
@@ -89,6 +93,8 @@ function ProjectsList() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (saving || (!editingProject && creationBlocked)) return;
+        setSaving(true);
         setError('');
         setSuccess('');
 
@@ -106,6 +112,7 @@ function ProjectsList() {
             } else {
                 await api.post('/projects/', submitData);
                 setSuccess('Project created successfully!');
+                refreshUsage({force: true});
             }
 
             setFormData({ 
@@ -124,6 +131,9 @@ function ProjectsList() {
         } catch (err) {
             console.error('Failed to save project:', err);
             setError(err.response?.data?.detail || 'Failed to save project');
+            if (err.response?.status === 403) refreshUsage({force: true});
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -148,6 +158,7 @@ function ProjectsList() {
 
         try {
             await api.delete(`/projects/${id}/`);
+            refreshUsage({force: true});
             setSuccess('Project deleted successfully!');
             fetchProjects();
             setTimeout(() => setSuccess(''), 3000);
@@ -218,6 +229,8 @@ function ProjectsList() {
                         </button>
                     )}
                 </div>
+
+                {user?.role === 'admin' && <CreationAllowance metric="projects" />}
 
                 {/* Success/Error Messages */}
                 {success && (
@@ -356,6 +369,8 @@ function ProjectsList() {
                             </div>
 
                             <form onSubmit={handleSubmit} className="space-y-4">
+                                {!editingProject && <CreationAllowance metric="projects" />}
+                                {error && <p className="text-red-700" role="alert">{error}</p>}
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                                         Project Name <span className="text-red-500">*</span>
@@ -483,9 +498,10 @@ function ProjectsList() {
                                     </button>
                                     <button
                                         type="submit"
-                                        className="px-6 py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-teal-700 transition"
+                                        disabled={saving || (!editingProject && creationBlocked)}
+                                        className="px-6 py-3 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-teal-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
-                                        {editingProject ? 'Update' : 'Create'}
+                                        {saving ? 'Saving…' : editingProject ? 'Update' : 'Create'}
                                     </button>
                                 </div>
                             </form>

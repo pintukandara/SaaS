@@ -1,29 +1,12 @@
-import axios from "axios";
-import React, { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import api from "../../api/axios";
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useUser } from "../../context/UserContext";
 import { logout } from "../../utils/auth";
 
 export const DashboardNav = () => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const { user, loading } = useUser();
+  const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
-
-  useEffect(() => {
-    fetchUserData();
-  }, []);
-  const fetchUserData = async () => {
-    try {
-      const response = await api.get("/auth/me");
-      setUser(response.data);
-    } catch (error) {
-      console.error("Failed to fetch user data", err);
-      navigate("/login");
-    } finally {
-      setLoading(false);
-    }
-  };
   const handleLogout = () => {
     logout();
   };
@@ -60,7 +43,7 @@ export const DashboardNav = () => {
     <>
       <nav className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-wrap justify-between items-center gap-4">
             <div className="flex items-center space-x-3">
               <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-2 rounded-lg">
                 <svg
@@ -82,7 +65,20 @@ export const DashboardNav = () => {
               </h1>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <button
+              type="button"
+              className="lg:hidden rounded-md border border-gray-300 px-3 py-2 text-gray-700"
+              aria-expanded={menuOpen}
+              aria-controls="dashboard-navigation"
+              onClick={() => setMenuOpen(open => !open)}
+            >
+              {menuOpen ? 'Close menu' : 'Menu'}
+            </button>
+            <div
+              id="dashboard-navigation"
+              className={`${menuOpen ? 'flex' : 'hidden'} w-full flex-wrap items-center gap-4 lg:flex lg:w-auto`}
+              onClick={event => { if (event.target.closest('a')) setMenuOpen(false); }}
+            >
               {/* Navigation Links */}
               <Link
                 to="/dashboard"
@@ -135,6 +131,13 @@ export const DashboardNav = () => {
                 }`}
               >
                 Projects
+              </Link>
+
+              <Link
+                to="/subscriptions"
+                className={`font-medium transition ${location.pathname === '/subscriptions' ? 'text-indigo-600' : 'text-gray-700 hover:text-indigo-600'}`}
+              >
+                Usage &amp; plans
               </Link>
 
               {/* User Info */}

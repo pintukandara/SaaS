@@ -218,14 +218,7 @@ class SubscriptionViewSetTests(APITestCase):
 
 
 class UsageTrackingViewSetTests(APITestCase):
-    """
-    NOTE (BUG-07): UsageTrackingViewSet.get_queryset() and its
-    `current_month` action both read `self.request.user.current_organization`
-    (American spelling) but CustomUser only defines `current_organisation`
-    (British spelling). Any authenticated request with an active
-    subscription therefore raises AttributeError -> 500, instead of the
-    intended "no organisation" 400 response.
-    """
+    """Usage endpoints enforce authentication and scope results to the organisation."""
 
     def setUp(self):
         self.owner = CustomUser.objects.create_user(
@@ -256,8 +249,16 @@ class UsageTrackingViewSetTests(APITestCase):
         response = self.client.get(reverse('usage-list'))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_list_crashes_due_to_organisation_attribute_typo(self):
+    def test_list_returns_only_current_organisation_usage(self):
+        from subscription.models import UsageTracking
+
+        own_usage = UsageTracking.objects.create(organisation=self.org, year=2026, month=10)
+        other_org = Organisation.objects.create(
+            name='Other', slug='other', owner=self.owner, email='other@example.com'
+        )
+        UsageTracking.objects.create(organisation=other_org, year=2026, month=10)
         self.client.force_authenticate(self.owner)
-        self.client.raise_request_exception = False
         response = self.client.get(reverse('usage-list'))
-        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0]['id'], own_usage.pk)

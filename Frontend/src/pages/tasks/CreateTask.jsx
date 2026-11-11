@@ -3,9 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { useUser } from '../../context/UserContext';
 import { DashboardNav } from '../../components/Dashboard/DashboardNav';
+import { useUsage } from '../../context/UsageContext';
+import CreationAllowance from '../../components/Usage/CreationAllowance';
+import { useCreationBlocked } from '../../components/Usage/usageHelpers';
 
 function CreateTask() {
     const { user } = useUser();
+    const { refreshUsage } = useUsage();
+    const creationBlocked = useCreationBlocked('tasks');
     const navigate = useNavigate();
 
     const [formData, setFormData] = useState({
@@ -118,6 +123,7 @@ function CreateTask() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (creationBlocked || loading) return;
         setError('');
         setSuccess('');
         setLoading(true);
@@ -142,6 +148,7 @@ function CreateTask() {
             
             console.log('✅ Task created:', response.data);
             setSuccess('Task created successfully!');
+            refreshUsage({force: true});
             
             // Redirect after 1.5 seconds
             setTimeout(() => {
@@ -173,6 +180,7 @@ function CreateTask() {
             }
             
             setError(errorMessage);
+            if (err.response?.status === 403) refreshUsage({force: true});
         } finally {
             setLoading(false);
         }
@@ -215,6 +223,8 @@ function CreateTask() {
                     <p className="text-gray-600 mt-2">Fill in the details to create a new task</p>
                 </div>
 
+                <CreationAllowance metric="tasks" />
+
                 {/* Success Message */}
                 {success && (
                     <div className="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-lg">
@@ -236,16 +246,6 @@ function CreateTask() {
                             </svg>
                             <p className="text-red-700 font-medium">{error}</p>
                         </div>
-                    </div>
-                )}
-
-                {/* Debug Info (Remove in production) */}
-                {process.env.NODE_ENV === 'development' && (
-                    <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg text-sm">
-                        <p className="text-blue-700 font-medium mb-2">Debug Info:</p>
-                        <p className="text-blue-600">User Role: {user?.role}</p>
-                        <p className="text-blue-600">Projects Available: {projects.length}</p>
-                        <p className="text-blue-600">Employees Available: {employees.length}</p>
                     </div>
                 )}
 
@@ -458,7 +458,7 @@ function CreateTask() {
                             </button>
                             <button
                                 type="submit"
-                                disabled={loading}
+                                disabled={loading || creationBlocked}
                                 className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold hover:from-indigo-700 hover:to-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                             >
                                 {loading ? (
