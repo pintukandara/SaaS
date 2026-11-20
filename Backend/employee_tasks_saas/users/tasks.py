@@ -33,7 +33,8 @@ def send_verification_email(self, user_id):
         return f"User not found with id={user_id}"
 
     token = generate_email_verify_token(user)
-    verify_url = f"http://127.0.0.1:8000/api/verify-email/?token={token}"
+    backend_url = getattr(settings, 'BACKEND_URL', 'http://127.0.0.1:8000').rstrip('/')
+    verify_url = f"{backend_url}/api/verify-email/?token={token}"
 
     send_mail(
         subject="Verify your email",
@@ -57,7 +58,8 @@ def send_password_reset_email(self,email):
     uidb64 = urlsafe_base64_encode(force_bytes(user.id))
     print(uidb64)
     print(token)
-    reset_url = f"http://127.0.0.1:8000/api/reset-password/?uidb64={uidb64}&token={token}"
+    backend_url = getattr(settings, 'BACKEND_URL', 'http://127.0.0.1:8000').rstrip('/')
+    reset_url = f"{backend_url}/api/reset-password/?uidb64={uidb64}&token={token}"
     send_mail(
         subject="Reset your password",
         message=f"Click this link to reset password: {reset_url}",

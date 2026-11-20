@@ -38,7 +38,7 @@ import secrets
 import razorpay
 from users.models import CustomUser
 
-baseUrl = f"http://localhost:5173"
+baseUrl = getattr(settings, 'FRONTEND_URL', 'http://localhost:5173').rstrip('/')
 
 client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
