@@ -80,24 +80,26 @@ WSGI_APPLICATION = 'employee_tasks_saas.wsgi.application'
 
 
 # Database
-DATABASE_URL = config('DATABASE_URL', default='')
-if DATABASE_URL:
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
+DATABASE_URL = config('DATABASE_URL', default='').strip()
+DATABASES = {}
+
+if DATABASE_URL and '://' in DATABASE_URL and not DATABASE_URL.startswith('://'):
+    try:
+        DATABASES['default'] = dj_database_url.parse(
+            DATABASE_URL,
             conn_max_age=600,
         )
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': config('DB_ENGINE', default='django.db.backends.mysql'),
-            'NAME': config('DB_NAME', default='saas_db'),
-            'USER': config('DB_USER', default='saas_user'),
-            'PASSWORD': config('DB_PASSWORD', default=''),
-            'HOST': config('DB_HOST', default='127.0.0.1'),
-            'PORT': config('DB_PORT', default='3306'),
-        }
+    except Exception as e:
+        print(f"Warning: Failed to parse DATABASE_URL ({e}), falling back to standard config.")
+
+if 'default' not in DATABASES:
+    DATABASES['default'] = {
+        'ENGINE': config('DB_ENGINE', default='django.db.backends.mysql'),
+        'NAME': config('DB_NAME', default='saas_db'),
+        'USER': config('DB_USER', default='saas_user'),
+        'PASSWORD': config('DB_PASSWORD', default=''),
+        'HOST': config('DB_HOST', default='127.0.0.1'),
+        'PORT': config('DB_PORT', default='3306'),
     }
 
 # Optional SSL mode for Aiven MySQL or cloud databases
