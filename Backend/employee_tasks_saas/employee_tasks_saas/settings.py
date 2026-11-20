@@ -102,6 +102,12 @@ if 'default' not in DATABASES:
         'PORT': config('DB_PORT', default='3306'),
     }
 
+# Fix parameter naming for mysqlclient (convert 'ssl-mode' to 'ssl_mode')
+if 'default' in DATABASES and 'OPTIONS' in DATABASES['default']:
+    opts = DATABASES['default']['OPTIONS']
+    if 'ssl-mode' in opts:
+        opts['ssl_mode'] = opts.pop('ssl-mode')
+
 # Optional SSL mode for Aiven MySQL or cloud databases
 db_ssl_mode = config('DB_SSL_MODE', default='')
 if db_ssl_mode:
