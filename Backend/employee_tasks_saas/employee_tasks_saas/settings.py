@@ -232,13 +232,41 @@ SIMPLE_JWT = {
 
 
 # CORS Configuration
-_default_cors = f'http://localhost:5173,http://127.0.0.1:5173,{FRONTEND_URL}'
-CORS_ALLOWED_ORIGINS = config(
-    'CORS_ALLOWED_ORIGINS',
-    default=_default_cors,
-    cast=Csv()
-)
+_frontend_clean = FRONTEND_URL.rstrip('/')
+_base_cors = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'https://chromosom.vercel.app',
+]
+if _frontend_clean and _frontend_clean not in _base_cors:
+    _base_cors.append(_frontend_clean)
+
+cors_env = config('CORS_ALLOWED_ORIGINS', default='')
+if cors_env:
+    CORS_ALLOWED_ORIGINS = [o.strip().rstrip('/') for o in cors_env.split(',') if o.strip()]
+    for o in _base_cors:
+        if o not in CORS_ALLOWED_ORIGINS:
+            CORS_ALLOWED_ORIGINS.append(o)
+else:
+    CORS_ALLOWED_ORIGINS = _base_cors
+
+# Allow all Vercel production and preview deployments
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+]
+
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 
 # Celery Configuration
